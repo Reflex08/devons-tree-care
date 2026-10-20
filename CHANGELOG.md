@@ -63,6 +63,25 @@ detailing app does, it still does; this lists only what changed.
   of going to find the client first. Extracted as `applyClientEdits()` so the gate can
   cover add, change, clear, trim and a missing client.
 
+### Messages — pre-written outreach to a whole list
+
+A fifth screen in the menu. Pick who, pick what, then tap down the list.
+
+- **Six audiences**, each showing its live count: not texted in 30 days (the default, so a
+  second pass cannot re-hit the same people), everyone with a number, leads only, active
+  clients, owes money, never booked a job. Anyone without a phone number is never listed.
+- **Six messages**: quiet-season check-in, storm follow-up, deadwood before winter, still
+  want that quote, balance reminder, and a blank to write his own. All editable in the box
+  before sending; none is longer than two SMS segments.
+- **A live preview** under the box shows what the first person on the list actually
+  receives, names and figures filled in — the box shows `{firstname}`, the preview shows
+  "Hi Chris".
+- **One at a time, on purpose.** `sms:` with a list of numbers opens a single group chat,
+  which is the wrong thing entirely for outreach. Each row has its own Text button that
+  opens the messaging app addressed to that one person. The row ticks off and greys out
+  for a day afterwards, and the text is written to their activity log.
+- `lastTexted` is stamped on the client, which is what the 30-day audience reads.
+
 ### Tap an address, get a route
 
 - Addresses are links that open **Apple Maps with the destination already set**
@@ -121,7 +140,7 @@ detailing app does, it still does; this lists only what changed.
 
 ### Tests
 
-`node tests/run-tests.js` — 119 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 135 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

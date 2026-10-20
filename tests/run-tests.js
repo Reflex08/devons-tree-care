@@ -33,6 +33,8 @@ const script = html.slice(html.indexOf("<script>") + 8, html.lastIndexOf("</scri
    snippet runs in the same scope and hands both out. */
 const shim = script + `
 ;globalThis.__k = {DEFAULT_SERVICES,DEFAULT_SETTINGS,GOAL,KEY,OLDKEY,RELAY,CONFIRM_BASE};
+;globalThis.MSG_TEMPLATES = MSG_TEMPLATES;
+;globalThis.MSG_AUDIENCES = MSG_AUDIENCES;
 ;globalThis.__setDb = v => { db = v; };
 ;globalThis.__setSvc = v => { jobSvc = v; };
 ;globalThis.__getDb = () => db;
@@ -229,6 +231,56 @@ eq("a fee the owner chose is left alone",
    A.normalize({ customers: [], jobs: [], feeTo20: true,
      settings: { business: { name: "X", cancelFeePct: 35 }, services: K.DEFAULT_SERVICES },
      seqC: 1, seqJ: 1 }).settings.business.cancelFeePct, 35);
+
+/* ---------- Messages: audiences and mass outreach ----------
+   sms: with many recipients opens one group chat, so this is a queue, not a blast. */
+const DAY = 864e5;
+A.__setDb(A.normalize({
+  customers: [
+    { id: 1, name: "Zoe Lead",    phone: "+15550101", status: "lead",   log: [] },
+    { id: 2, name: "Al Active",   phone: "+15550102", status: "active", log: [] },
+    { id: 3, name: "Owen Owes",   phone: "+15550103", status: "active", log: [] },
+    { id: 4, name: "Nora NoPhone", phone: "",         status: "lead",   log: [] },
+    { id: 5, name: "Rex Recent",  phone: "+15550105", status: "active", log: [],
+      lastTexted: Date.now() - 2 * DAY },
+    { id: 6, name: "Cal Cold",    phone: "+15550106", status: "active", log: [],
+      lastTexted: Date.now() - 90 * DAY },
+  ],
+  jobs: [{ id: 1, customerId: 3, service: "Stump Grinding", price: 180, collected: 0,
+           date: "2026-09-01", status: "completed", completedAt: 1 },
+         { id: 2, customerId: 2, service: "Hedge Trimming", price: 150, collected: 150,
+           date: "2026-09-02", status: "completed", completedAt: 1 }],
+  settings: { business: { name: "Devon's Tree Care" }, services: K.DEFAULT_SERVICES },
+  seqC: 7, seqJ: 3,
+}));
+const ids = w => A.msgAudienceList(w).map(c => c.id);
+const byId = id => A.__getDb().customers.find(c => c.id === id);
+ok("nobody without a number is ever listed",
+   A.MSG_AUDIENCES.map(a=>a[0]).every(w => !ids(w).includes(4)),
+   JSON.stringify(A.MSG_AUDIENCES.map(a=>a[0]).map(w => [w, ids(w)])));
+eq("everyone with a number", ids("all"), [2, 6, 3, 5, 1]);
+eq("leads only", ids("lead"), [1]);
+eq("active only", ids("active"), [2, 6, 3, 5]);
+eq("owes money", ids("owes"), [3]);
+eq("never booked a job", ids("never"), [6, 5, 1]);
+// "cold" is the default, so a blast cannot re-hit someone texted days ago.
+ok("not texted in 30 days excludes a recent one", !ids("cold").includes(5), JSON.stringify(ids("cold")));
+ok("not texted in 30 days includes a stale one", ids("cold").includes(6));
+ok("never-texted clients count as cold", ids("cold").includes(1) && ids("cold").includes(2));
+ok("the list is alphabetical", ids("all").map(i => byId(i).name)
+   .every((n, i, arr) => i === 0 || arr[i - 1].localeCompare(n) <= 0));
+
+ok("there is a template for every common ask", A.MSG_TEMPLATES.length >= 5);
+ok("the last one is a blank to write your own",
+   A.MSG_TEMPLATES[A.MSG_TEMPLATES.length - 1][1] === "");
+ok("every real template greets by first name",
+   A.MSG_TEMPLATES.slice(0, -1).every(t => t[1].includes("{firstname}")));
+ok("no template is longer than two SMS segments",
+   A.MSG_TEMPLATES.every(t => t[1].length <= 306),
+   A.MSG_TEMPLATES.filter(t => t[1].length > 306).map(t => t[0]).join(", "));
+const filled = A.msgFor(byId(3));
+ok("tokens are filled in per person", filled.includes("Owen") && !filled.includes("{firstname}"), filled);
+ok("the business name is filled in", filled.includes("Devon's Tree Care"), filled);
 
 /* ---------- tap an address, get a route ---------- */
 ok("an iPhone gets Apple Maps", A.isApple("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"));

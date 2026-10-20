@@ -275,6 +275,11 @@
   .svc-total .t{font-size:19px}
   .modal-head .hsub{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:2px}
   /* An address is a link to the drive, so it has to read as one and be thumb-sized. */
+  .msg-prev{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--field-bg);
+    border:1px solid var(--line);color:var(--muted);font-size:12.5px;line-height:1.5}
+  .msg-prev b{color:var(--brand)}
+  .lead-card.msg-done{opacity:.5}
+  .lead-card.msg-done .btn{background:var(--green-soft);color:var(--green)}
   a.maps{color:var(--brand);text-decoration:none;font-weight:700;
     display:inline-block;padding:3px 0;min-height:24px}
   a.maps:hover,a.maps:focus-visible{text-decoration:underline}
@@ -389,6 +394,7 @@
     <a data-view="dashboard" class="active"><span class="ic">▦</span> Home</a>
     <a data-view="schedule"><span class="ic">🗓️</span> Schedule <span class="count" id="c-sched">0</span></a>
     <a data-view="customers"><span class="ic">👥</span> Clients <span class="count" id="c-cust">0</span></a>
+    <a data-view="messages"><span class="ic">💬</span> Messages</a>
     <a data-view="settings"><span class="ic">⚙️</span> Settings</a>
   </nav>
   <div class="helper-status" id="backup-chip" title="Automatic backup status"><span class="led"></span><span id="backup-text">Auto-backup: off</span></div>
@@ -814,8 +820,9 @@ function render(){
   $("#c-sched").textContent=db.jobs.filter(j=>j.status==="scheduled").length;
   $("#c-cust").textContent=db.customers.length;
   document.querySelectorAll("#nav a").forEach(a=>a.classList.toggle("active",a.dataset.view===view));
-  document.body.classList.toggle("no-fab",view==="settings");
-  ({dashboard:renderDashboard,schedule:renderSchedule,customers:renderCustomers,settings:renderSettings}[view])();
+  document.body.classList.toggle("no-fab",view==="settings"||view==="messages");
+  ({dashboard:renderDashboard,schedule:renderSchedule,customers:renderCustomers,
+    messages:renderMessages,settings:renderSettings}[view])();
 }
 
 /* ---- Dashboard ---- */
@@ -1134,6 +1141,123 @@ function custCard(c){
       <div class="lc-right">${paid>0?`<span class="lchip">${money(paid)}</span>`:""}
         <span class="lc-edit">Edit</span><span class="lc-chev">›</span></div>
     </div>`;
+}
+
+/* ---------------- Messages ----------------
+   Reaching 138 people from a phone: sms: with a list of numbers opens ONE group chat,
+   which is the wrong thing entirely. So this is a queue -- pick who, pick what, then tap
+   down the list. Each tap opens the messaging app addressed to one person with their own
+   name already in the text, and the row ticks off when he comes back. */
+let msgAudience="cold", msgTemplate=0, msgDraft=null;
+const MSG_TEMPLATES=[
+  ["Quiet-season check-in",
+   "Hi {firstname} — Devon here from {business}. I'm booking tree work over the next few weeks. "+
+   "Want me to take a look at anything while I'm in your area? No charge for the quote."],
+  ["Storm follow-up",
+   "Hi {firstname} — Devon from {business}. After the weather I'm checking trees for broken or "+
+   "hanging limbs. Want me to swing by and look yours over?"],
+  ["Deadwood before winter",
+   "Hi {firstname} — Devon from {business}. Worth getting deadwood out before the ice comes; "+
+   "it's what brings limbs down on cars and roofs. Want a price?"],
+  ["Still want that quote?",
+   "Hi {firstname} — Devon from {business}. You asked about tree work a while back. Still want "+
+   "a price? Happy to come take a look, no charge."],
+  ["Balance reminder",
+   "Hi {firstname} — Devon from {business}. Just a reminder there's {balance} outstanding on "+
+   "your last job. If there's any trouble with it, tell me."],
+  ["Write my own",""],
+];
+const MSG_AUDIENCES=[
+  ["cold","Not texted in 30 days"],
+  ["all","Everyone with a number"],
+  ["lead","Leads only"],
+  ["active","Active clients"],
+  ["owes","Owes money"],
+  ["never","Never booked a job"],
+];
+function msgAudienceList(which){
+  const cut=offset(-30);
+  return db.customers.filter(c=>{
+    if(!cleanNum(c.phone))return false;                       // nothing to text
+    switch(which){
+      case "lead":   return c.status==="lead";
+      case "active": return c.status==="active";
+      case "owes":   return custBalance(c.id)>0;
+      case "never":  return custJobs(c.id).length===0;
+      case "cold":   return !c.lastTexted||localISO(new Date(c.lastTexted))<cut;
+      default:       return true;
+    }
+  }).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+}
+function msgText(){
+  return msgDraft!==null?msgDraft:(MSG_TEMPLATES[msgTemplate]||["",""])[1];
+}
+/* The message as this one person will receive it, so what he previews is what sends. */
+function msgFor(c){
+  return fillVars(msgText(),c,custLast(c.id)||custNext(c.id)||null);
+}
+function renderMessages(){
+  const list=msgAudienceList(msgAudience);
+  const body=msgText();
+  const noPhone=db.customers.length-db.customers.filter(c=>cleanNum(c.phone)).length;
+  $("#content").innerHTML=`
+    <div class="lx-bar"><div class="lx-title">Messages</div></div>
+    <div class="panel" style="margin-bottom:14px"><div class="panel-pad" style="padding:16px 18px">
+      <div class="field"><label>Who</label>
+        <select id="msg-aud">${MSG_AUDIENCES.map(([v,l])=>
+          `<option value="${v}" ${msgAudience===v?"selected":""}>${esc(l)} — ${msgAudienceList(v).length}</option>`).join("")}</select></div>
+      <div class="field"><label>Message</label>
+        <select id="msg-tpl">${MSG_TEMPLATES.map(([l],i)=>
+          `<option value="${i}" ${msgTemplate===i?"selected":""}>${esc(l)}</option>`).join("")}</select></div>
+      <div class="field"><label>Text they get</label>
+        <textarea id="msg-body" style="min-height:110px">${esc(body)}</textarea>
+        <div class="hint" id="msg-count"></div>
+        ${list.length?`<div class="msg-prev" id="msg-prev"></div>`:""}</div>
+      ${list.length?`<div class="hint">Tap <b>Text</b> on a row — your messaging app opens with
+        that person's name already in it. Press send, come back, next one.
+        ${noPhone?`<br>${noPhone} client${noPhone!==1?"s have":" has"} no number and cannot be texted.`:""}</div>`:""}
+    </div></div>
+    ${list.length?`<div id="msg-list"></div>`
+      :`<div class="empty" style="padding:34px"><div class="big">💬</div>
+         Nobody in this group${noPhone?` — ${noPhone} client${noPhone!==1?"s have":" has"} no phone number`:""}.</div>`}`;
+
+  const paint=()=>{
+    const el=$("#msg-list"); if(!el)return;
+    el.innerHTML=msgAudienceList(msgAudience).map(c=>{
+      const done=c.lastTexted&&(Date.now()-c.lastTexted)<864e5; // ticked for a day
+      return `<div class="lead-card${done?" msg-done":""}" data-msgc="${c.id}">
+        <div class="avatar" style="background:${avatarColor(c.name)}">${esc(initials(c.name))}</div>
+        <div class="lc-mid"><div class="nm">${esc(c.name)}</div>
+          <div><span class="ph-pill">${esc(fmtPhone(c.phone))}</span>
+          ${c.lastTexted?`<span class="lchip" title="Last texted">${esc(relTime(c.lastTexted))}</span>`:""}</div></div>
+        <div class="lc-right"><button class="btn sm btn-primary" data-msgsend="${c.id}">${done?"✓ Sent":"Text"}</button></div>
+      </div>`;}).join("");
+    el.querySelectorAll("[data-msgsend]").forEach(b=>b.onclick=e=>{
+      e.stopPropagation(); msgSend(+b.dataset.msgsend);});
+    el.querySelectorAll("[data-msgc]").forEach(d=>d.onclick=()=>openCust(+d.dataset.msgc));
+  };
+  // The box shows {firstname}; this shows what the first person on the list actually gets.
+  const count=()=>{const n=msgText().length;
+    $("#msg-count").textContent=`${n} characters · ${Math.max(1,Math.ceil(n/160))} message${n>160?"s":""} each`;
+    const pv=$("#msg-prev");
+    if(pv&&list.length)pv.innerHTML=`<b>${esc(firstName(list[0].name))} gets:</b> ${esc(msgFor(list[0]))}`;};
+  paint(); count();
+
+  $("#msg-aud").onchange=e=>{msgAudience=e.target.value;renderMessages();};
+  $("#msg-tpl").onchange=e=>{msgTemplate=+e.target.value;msgDraft=null;renderMessages();};
+  $("#msg-body").addEventListener("input",e=>{msgDraft=e.target.value;count();});
+}
+/* One person, one message, their own thread. */
+function msgSend(id){
+  const c=custById(id); if(!c)return;
+  const to=cleanNum(c.phone); if(!to){toast("No number for this client","err");return;}
+  const body=msgFor(c);
+  if(!body.trim()){toast("Write the message first","err");$("#msg-body").focus();return;}
+  c.lastTexted=Date.now();
+  c.log=c.log||[]; c.log.push({t:Date.now(),m:"📱 Texted: "+body});
+  save();
+  window.location.href="sms:"+to+"?&body="+encodeURIComponent(body);
+  renderMessages();
 }
 
 /* ---- Money details (collapsed section on Home) ---- */
