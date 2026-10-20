@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#fdeec2">
+<title>Confirm your tree work</title>
+<style>
+  /* Brand palette: espresso brown, cream, soft butter yellow. Brown carries the type and
+     the headings, cream is the ground, and the yellow is kept for the one thing the
+     customer has to press. */
+  :root{
+    --ink:#1d3326; --muted:#5f7568; --faint:#93a899;
+    --cream:#f4f9f3; --card:#ffffff; --wash:#e8f2e7; --line:#d5e3d4;
+    --moss:#5ac77f; --moss-d:#3f9e63; --moss-ink:#06240f;
+    --bark:#2f5a3c;
+    --leaf:#3f7d52; --leaf-soft:#e4f0e5;
+  }
+  *{box-sizing:border-box;min-width:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* A soft butter band behind the mark, fading into the cream ground. */
+  .top{position:absolute;left:0;right:0;top:0;height:260px;z-index:0;
+    background:linear-gradient(#fdeec2 0, #fbf3dd 55%, var(--cream) 100%)}
+  .wrap{position:relative;z-index:1;width:100%;max-width:412px;margin:0 auto;padding:30px 20px 56px}
+
+  .brand{text-align:center;margin-bottom:20px}
+  .brand img{width:150px;max-width:62%;height:auto;display:inline-block}
+  .word{font-size:12.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--bark);text-align:center}
+
+  .greet{font-size:30px;font-weight:800;letter-spacing:-.9px;line-height:1.12;margin:0 0 7px;
+    text-align:center;color:var(--bark)}
+  .lede{color:var(--muted);font-size:15px;text-align:center;margin:0 auto 24px;line-height:1.5;max-width:30ch}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;
+    box-shadow:0 1px 2px rgba(74,44,23,.04), 0 12px 32px rgba(74,44,23,.07)}
+  .svc{font-size:20px;font-weight:800;line-height:1.25;letter-spacing:-.3px;overflow-wrap:anywhere;color:var(--bark)}
+  .rows{margin-top:18px;border-top:1px solid var(--line);padding-top:6px}
+  .row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;font-size:14.5px;
+    border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:0}
+  .row .k{color:var(--muted);font-weight:600;flex-shrink:0}
+  .row .v{font-weight:700;text-align:right;overflow-wrap:anywhere}
+  .total{display:flex;justify-content:space-between;align-items:center;
+    margin-top:18px;padding:16px 18px;background:var(--wash);border-radius:13px}
+  .total .k{font-weight:700;font-size:14.5px}
+  .total .v{font-size:28px;font-weight:800;letter-spacing:-.8px;white-space:nowrap;display:block;
+    text-align:right;color:var(--bark)}
+  .total .due{display:block;font-size:11.5px;font-weight:600;color:var(--faint);text-align:right;margin-top:1px}
+
+
+  .tc{display:flex;gap:13px;align-items:flex-start;margin-top:20px;padding-top:19px;border-top:1px solid var(--line)}
+  .tc input{width:22px;height:22px;flex-shrink:0;margin:1px 0 0;accent-color:var(--bark);cursor:pointer}
+  .tc-main{font-weight:700;font-size:14.5px;line-height:1.4;cursor:pointer;display:block}
+  .tc-hint{font-size:13px;color:var(--muted);margin-top:4px}
+  .tc-hint a{color:var(--bark);font-weight:700;text-decoration:underline;cursor:pointer}
+  .terms{display:none;margin-top:16px;background:var(--wash);border-radius:13px;padding:16px 18px}
+  .terms.open{display:block;max-height:44vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .terms h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin:0 0 12px}
+  .terms ol{margin:0;padding-left:18px}
+  .terms li{color:var(--muted);font-size:12.5px;line-height:1.62;margin-bottom:12px}
+  .terms li:last-child{margin-bottom:0}
+  .terms li b{color:var(--bark)}
+
+  .cta{width:100%;border:0;border-radius:12px;padding:18px;font-size:16.5px;font-weight:800;
+    letter-spacing:-.2px;background:var(--moss);color:var(--moss-ink);cursor:pointer;
+    margin-top:20px;font-family:inherit;transition:background .13s}
+  .cta:hover{background:var(--moss-d)}
+  .cta[disabled]{background:var(--wash);color:var(--faint);cursor:not-allowed}
+  .cta.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .cta.ghost:hover{background:var(--wash)}
+  .call{text-align:center;color:var(--muted);font-size:14px;margin-top:20px}
+  .call a{color:var(--bark);font-weight:800;text-decoration:none;border-bottom:2px solid var(--moss)}
+
+  .done{text-align:center;margin-top:16px}
+  .ck{width:60px;height:60px;border-radius:50%;background:var(--leaf-soft);color:var(--leaf);
+    font-size:30px;font-weight:800;line-height:60px;margin:0 auto 15px}
+  .headline{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--bark)}
+  .note{color:var(--muted);font-size:13.5px;margin-top:10px;line-height:1.55}
+  .msgbox{background:var(--wash);border-radius:12px;padding:14px;font-size:12.5px;
+    color:var(--muted);margin-top:14px;text-align:left;line-height:1.5}
+  .err{text-align:center;color:var(--muted);padding:48px 0;line-height:1.65}
+  .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:26px;
+    letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+</style>
+</head>
+<body>
+<div class="top"></div>
+<div class="wrap" id="app"></div>
+<script>
+/* Everything this page shows arrives in the ?d= parameter, base64url-encoded by the CRM.
+   No server, no database -- the link IS the record. */
+
+/* Service terms for tree work, modelled on what arborist agreements and property-access
+   waivers actually carry: scope, access and site prep, utilities, lawn and surface damage,
+   debris and wood, stump grinding, hidden defects, permits and boundaries, weather,
+   liability, cancellation, payment and photo consent. Each entry is [lead-in, text].
+   Plain language on purpose -- someone reading this on a phone should understand what
+   they are agreeing to. */
+var TERMS=[
+ ["Scope","The price covers the work listed above on the trees named above, quoted on what was visible at the estimate. Anything else -- another tree, another limb, a stump that was not in the quote -- is a separate job."],
+ ["Access and site preparation","Please move cars, bins, trailers, garden furniture, planters and anything breakable out of the work area and the drop zone before we arrive, and leave gates unlocked. Pets and children need to be kept indoors while work is underway."],
+ ["Utilities and services","Tell us about anything buried or hidden: septic beds, wells, irrigation, invisible fencing, gas or hydro runs, drain tile and cable. Stump grinding and equipment access cannot be guaranteed safe over services we were not told about. We do not work on or near energised power lines -- that is the utility's job, and we will tell you when a call to them has to come first."],
+ ["Lawns, drives and surfaces","Heavy equipment on grass leaves marks, and wet ground leaves ruts. We spread the load and lay protection where we can, but some turf damage, compaction and minor marking is normal and is not treated as damage. Driveways and walkways can be marked by chip trucks and by falling wood."],
+ ["Debris and wood","Unless the quote says otherwise, brush is chipped and removed, wood is cut to manageable rounds and left stacked on site, and the work area is raked clean. Sawdust, fine chip and small twigs in beds and gutters are not always recoverable. Tell us before the day if you want the wood hauled away or the rounds split -- both are extra."],
+ ["Stump grinding","Grinding goes to roughly 6-8 inches below grade unless a depth was agreed, and it removes the stump, not the root system. Surface roots and suckering can continue, and some species regrow from roots. The hole is backfilled with the grindings unless you ask otherwise; topsoil, seed and sod are not included."],
+ ["Hidden defects and unforeseen conditions","Trees hide decay, cavities, embedded metal, old hardware and previous bad cuts, and none of it is visible from the ground. If what we find changes the method or the risk, we stop and re-quote before carrying on -- you are never charged for work you did not agree to."],
+ ["Permits, protected trees and boundaries","You confirm you own the trees or have the owner's permission, and that you are not aware of any bylaw, permit requirement, conservation designation, easement or agreement that restricts the work. Many municipalities protect trees over a certain size. Where a permit is needed, it is the property owner's to obtain unless agreed in writing."],
+ ["Pruning standards and tree health","Pruning follows accepted arboricultural practice: no topping, no lion-tailing, and no more live crown removed than the tree can carry. Even correct pruning is a wound. We cannot guarantee how any tree responds, that a pruned tree will not fail later, or that a tree in decline will recover."],
+ ["Weather and safety","Tree work stops for wind, lightning, ice and anything else that makes it unsafe to be in a tree or under one. We may reschedule for weather or if the site turns out to be unsafe to work. Rescheduling for weather is always free."],
+ ["Our liability","We carry our own equipment and we work carefully. If we damage your property through our own negligence, tell us before we leave or within 24 hours so we can inspect it. Our liability is limited to repairing that damage or refunding the price of the work, whichever is lower."],
+ ["Changes and cancellation","Rescheduling or cancelling is free with at least 24 hours' notice. Inside 24 hours, or if the crew arrives and the site cannot be worked -- blocked access, cars not moved, nobody to open a gate -- a late-cancellation fee of {fee} of the booked price applies."],
+ ["Running late","We will message you if we are delayed; tree jobs overrun when a tree turns out worse than it looked. If you need to be there and you are running late, tell us -- we can usually wait about 15 minutes before the appointment has to move."],
+ ["Payment","Payment is due when the work is finished and you have looked over the site, unless agreed otherwise in writing."],
+ ["Photographs","We may photograph the trees and the site before and after as a record of condition and to show our work. House numbers and plates are never shown. Tell us if you would rather we did not, and we will not."],
+ ["This agreement","Confirming below records your acceptance of these terms for this appointment, together with the date and time you confirmed."]
+];
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});}
+function digits(p){return String(p||"").replace(/[^\d]/g,"");}
+function fmtPhone(p){var d=digits(p);if(d.length===11&&d[0]==="1")d=d.slice(1);
+  return d.length===10?"("+d.slice(0,3)+") "+d.slice(3,6)+"-"+d.slice(6):String(p||"");}
+function fmtTime(t){if(!t)return"";var a=t.split(":"),h=+a[0],m=a[1]||"00";
+  var ap=h>=12?"PM":"AM";h=((h+11)%12)+1;return h+":"+m+" "+ap;}
+function fmtDate(iso){if(!iso)return"";var d=new Date(iso+"T12:00:00");
+  if(isNaN(d))return iso;
+  return d.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});}
+function fmtMoney(p){return "$"+(+p||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+function parseData(){
+  try{
+    var q=new URLSearchParams(location.search).get("d");
+    if(!q)return null;
+    var b=q.replace(/-/g,"+").replace(/_/g,"/");
+    while(b.length%4)b+="=";
+    var o=JSON.parse(decodeURIComponent(escape(atob(b))));
+    return o&&o.s?o:null;
+  }catch(e){return null;}
+}
+function fee(s){return String(s).replace(/\{fee\}/g,(+(parseData()||{}).f||0)+"%");}
+function render(){
+  var d=parseData(),app=document.getElementById("app");
+  if(!d){app.innerHTML='<div class="err">This confirmation link is incomplete or has expired.<br>'+
+    'Please ask for a fresh one.</div>';return;}
+  var when=fmtDate(d.dt),time=fmtTime(d.t),phone=fmtPhone(d.ph);
+  // Still sent with the emailed record, and still fills {fee} in the terms.
+  var feePct=(+d.f||0)+"%";
+
+  app.innerHTML=
+    '<div class="brand"><img id="logo" src="logo.png?v=1" alt="'+esc(d.b)+'"></div>'+
+    '<div class="word" id="wm" style="display:none">'+esc(d.b)+'</div>'+
+    '<div class="greet">Hi '+esc(d.n)+'</div>'+
+    '<div class="lede">Here are the details — have a look and confirm below.</div>'+
+    '<div class="card">'+
+      '<div class="svc">'+esc(d.s)+'</div>'+
+      '<div class="rows">'+
+        '<div class="row"><span class="k">When</span><span class="v">'+esc(when)+
+          (time?'<br>'+esc(time):'')+'</span></div>'+
+        (d.a?'<div class="row"><span class="k">Where</span><span class="v">'+esc(d.a)+'</span></div>':'')+
+      '</div>'+
+      '<div class="total"><span class="k">Total</span>'+
+        '<span><span class="v">'+esc(fmtMoney(d.p))+'</span>'+
+        '<span class="due">due on completion</span></span></div>'+
+      '<div class="tc">'+
+        '<input type="checkbox" id="chk">'+
+        '<div><label class="tc-main" for="chk">I confirm this appointment and accept the terms</label>'+
+        '<div class="tc-hint"><a id="rev">Terms and conditions</a></div></div>'+
+      '</div>'+
+      '<div class="terms" id="terms"><h2>Service terms</h2><ol>'+
+        TERMS.map(function(t){return '<li><b>'+esc(t[0])+'.</b> '+esc(fee(t[1]))+'</li>';}).join('')+
+      '</ol></div>'+
+    '</div>'+
+    '<div id="cta"><button class="cta" id="go" disabled>Confirm appointment</button></div>'+
+    (d.ph?'<div class="call">Prefer to call? <a href="tel:'+esc(digits(d.ph))+'">'+esc(phone)+'</a></div>':'')+
+    '<div class="foot">'+esc(d.b)+'</div>';
+
+  // If the mark cannot load, fall back to the plain wordmark rather than a broken image.
+  var logo=document.getElementById("logo");
+  if(logo)logo.onerror=function(){logo.style.display="none";document.getElementById("wm").style.display="block";};
+
+  var chk=document.getElementById("chk"),rev=document.getElementById("rev"),go=document.getElementById("go");
+  chk.onchange=function(){go.disabled=!chk.checked;};
+  rev.onclick=function(e){e.preventDefault();
+    var t=document.getElementById("terms");t.classList.toggle("open");
+    rev.textContent=t.classList.contains("open")?"Hide terms and conditions":"Terms and conditions";};
+
+  go.onclick=function(){
+    if(!chk.checked)return;
+    var msg="CONFIRMED ✓ — "+d.n+", "+d.s+" on "+when+
+      (time?", "+time:"")+" for "+fmtMoney(d.p)+". I accept the terms.";
+    var sms="sms:"+digits(d.ph)+"?&body="+encodeURIComponent(msg);
+    document.getElementById("cta").innerHTML=
+      '<div class="done"><div class="ck">&#10003;</div>'+
+      '<div class="headline">Confirmed — thank you!</div>'+
+      '<div class="note">Your messages app is opening. Press send — that text is your receipt.</div>'+
+      '<div class="msgbox">'+esc(msg)+'</div>'+
+      (d.ph?'<div class="note">Didn\'t open? Text it to <b>'+esc(phone)+'</b>:</div>'+
+        '<a class="cta" href="'+esc(sms)+'" style="display:block;text-align:center;text-decoration:none">Text '+esc(phone)+'</a>':'')+
+      '<button class="cta ghost" id="cp">Copy message</button></div>';
+    var cp=document.getElementById("cp");
+    cp.onclick=function(){
+      var ok=function(){cp.textContent="Copied ✓";};
+      if(navigator.clipboard&&navigator.clipboard.writeText)
+        navigator.clipboard.writeText(msg).then(ok,function(){prompt("Copy this message:",msg);});
+      else prompt("Copy this message:",msg);
+    };
+    // Tell the CRM directly so the booking ticks itself; the app polls this every minute.
+    if(d.r&&d.j&&d.j.length){
+      try{
+        fetch(d.r+"/confirm",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({jobIds:d.j,cid:d.c,name:d.n})}).catch(function(){});
+      }catch(e){}
+    }
+    // Written proof emailed to the business the moment they agree. Fire-and-forget -- the
+    // SMS receipt above is the fallback if this fails or was never activated.
+    if(d.e){
+      try{
+        fetch("https://formsubmit.co/ajax/"+encodeURIComponent(d.e),{method:"POST",
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({
+            _subject:"CONFIRMED — "+d.n+" ("+d.s+", "+when+")",
+            _template:"table",
+            client:d.n, service:d.s,
+            date:when, time:time||"anytime", address:d.a||"—",
+            price:fmtMoney(d.p),
+            agreed:"Yes — confirmed the appointment and accepted the terms",
+            agreed_at:new Date().toString(),
+            terms_shown:TERMS.map(function(x){return x[0]+": "+fee(x[1]);}).join(" | "),
+            cancellation_fee:feePct
+          })}).catch(function(){});
+      }catch(e){}
+    }
+    if(d.ph)location.href=sms;
+  };
+}
+render();
+</script>
+</body>
+</html>
