@@ -437,14 +437,20 @@
   <div class="modal-body">
     <div class="note" style="margin-bottom:14px">
       <b>Format — separate each field with a semicolon ( ; ):</b><br>
-      <span class="mono" style="font-weight:700">Name ; Address ; Phone ; Price ; Date done ; %Salesman ; Notes</span><br><br>
+      <span class="mono" style="font-weight:700">Name ; Address ; Phone ; Price ; Date ; Notes</span><br>
+      Only the name is required. Leave the rest empty and you still get the client.
     </div>
-    <div class="grid2">
+    <div class="field"><label>What is this list?</label>
+      <select id="paste-kind">
+        <option value="clients">Just clients — a contact list, no jobs</option>
+        <option value="jobs">Past jobs — make a job for each line too</option>
+      </select></div>
+    <div class="grid2" id="paste-jobopts" style="display:none">
       <div class="field"><label>Service for these jobs</label><select id="paste-service"></select></div>
       <div class="field"><label>Status</label><label style="font-weight:600;display:flex;gap:8px;align-items:center;padding:9px 0 0"><input type="checkbox" id="paste-completed" checked style="width:auto"> Mark each as completed &amp; paid</label></div>
     </div>
     <div class="field"><label>Paste your clients (one per line)</label>
-      <textarea id="paste-text" style="min-height:210px;font-family:monospace;font-size:13px" placeholder="Name;Address;Phone;Price$;Date;;"></textarea>
+      <textarea id="paste-text" style="min-height:210px;font-family:monospace;font-size:13px" placeholder="Jane Doe;14 Elm St;4165550123"></textarea>
       <div class="hint" id="paste-count"></div></div>
   </div>
   <div class="modal-foot"><button class="btn" id="paste-cancel">Cancel</button><button class="btn btn-primary" id="paste-import">Import all</button></div>
@@ -2074,13 +2080,18 @@ function findCust(name,phone){
 function openPaste(){
   $("#paste-service").innerHTML=db.settings.services.map(s=>`<option>${esc(s.name)}</option>`).join("")+`<option>Other</option>`;
   pastePreview();
+  const kind=$("#paste-kind");
+  const paintKind=()=>{$("#paste-jobopts").style.display=kind.value==="jobs"?"":"none";};
+  kind.onchange=paintKind; paintKind();
   $("#paste-overlay").classList.add("show");
   setTimeout(()=>$("#paste-text").focus(),50);
 }
 function closePaste(){$("#paste-overlay").classList.remove("show");}
 function pasteLines(){return $("#paste-text").value.split("\n").map(l=>l.trim()).filter(Boolean);}
 function pastePreview(){const n=pasteLines().length;$("#paste-count").textContent=n?`${n} client${n!==1?"s":""} ready to import`:"Paste at least one line.";}
-function importClientRows(lines,completed,service){
+/* A contact list has no price and no date, so importing one as jobs would book a $0
+   visit today against every name on it. clientsOnly brings the people in and nothing else. */
+function importClientRows(lines,completed,service,clientsOnly){
   let newCust=0,jobs=0,skipped=0;
   for(const line of lines){
     const p=line.split(";").map(x=>x.trim());
@@ -2091,8 +2102,12 @@ function importClientRows(lines,completed,service){
     const date=parseLooseDate(dateRaw)||today();
     let cust=findCust(name,phone);
     if(!cust){cust={id:db.seqC++,name,phone:phone?(cleanNum(phone)||phone):"",email:"",street:address,city:"",state:"",zip:"",
-      status:"active",source:"",tags:[],access:"",notes:"",followup:"",log:[],created:Date.now()};db.customers.push(cust);newCust++;}
+      // A pasted contact has never been sold to yet, so it starts as a lead unless the
+      // line brought a job with it.
+      status:clientsOnly?"lead":"active",source:"Imported",tags:[],access:"",
+      notes:noteParts.join(" "),followup:"",log:[],created:Date.now()};db.customers.push(cust);newCust++;}
     else{if(address&&!cust.street)cust.street=address;if(phone&&!cust.phone)cust.phone=cleanNum(phone)||phone;if(cust.status==="lead")cust.status="active";}
+    if(clientsOnly)continue;
     // skip a duplicate sale (same customer + date + price + service) so money never double-counts on re-import
     const dup=db.jobs.some(j=>j.customerId===cust.id&&j.date===date&&(+j.price||0)===price&&j.service===service);
     if(dup){skipped++;continue;}
@@ -2105,10 +2120,13 @@ function importClientRows(lines,completed,service){
 }
 function doPasteImport(){
   const lines=pasteLines(); if(!lines.length){toast("Nothing to import","err");return;}
+  const clientsOnly=$("#paste-kind").value!=="jobs";
   const completed=$("#paste-completed").checked, service=$("#paste-service").value||"Service";
-  const r=importClientRows(lines,completed,service);
+  const r=importClientRows(lines,completed,service,clientsOnly);
   save();closePaste();$("#paste-text").value="";view="customers";render();
-  toast(`Imported ${r.jobs} sale${r.jobs!==1?"s":""} · ${r.newCust} new client${r.newCust!==1?"s":""}${r.skipped?` · ${r.skipped} duplicate skipped`:""}`,"ok");
+  toast(clientsOnly
+    ? `Imported ${r.newCust} client${r.newCust!==1?"s":""}`
+    : `Imported ${r.jobs} sale${r.jobs!==1?"s":""} · ${r.newCust} new client${r.newCust!==1?"s":""}${r.skipped?` · ${r.skipped} duplicate skipped`:""}`,"ok");
 }
 $("#paste-close").onclick=closePaste;$("#paste-cancel").onclick=closePaste;
 $("#paste-import").onclick=doPasteImport;
