@@ -230,6 +230,75 @@ eq("a fee the owner chose is left alone",
      settings: { business: { name: "X", cancelFeePct: 35 }, services: K.DEFAULT_SERVICES },
      seqC: 1, seqJ: 1 }).settings.business.cancelFeePct, 35);
 
+/* ---------- the post-job message ----------
+   Marking a job Done opens this straight away, pre-written. It is the review ask, so a
+   sent one stops the button nagging. */
+A.__setDb(A.normalize({
+  customers: [{ id: 1, name: "Marcus Webb", phone: "+15550102", log: [] }],
+  jobs: [{ id: 3, customerId: 1, service: "Stump Grinding", price: 180, collected: 180,
+           date: "2026-10-14", status: "completed", completedAt: 1 },
+         { id: 4, customerId: 1, service: "Hedge Trimming", price: 150, collected: 50,
+           date: "2026-10-15", status: "completed", completedAt: 1 }],
+  settings: { business: { name: "Devon's Tree Care", notify: "devon@example.com" },
+              services: K.DEFAULT_SERVICES },
+  seqC: 2, seqJ: 5,
+}));
+const paidMsg = A.postJobMessage(A.__getDb().customers[0], A.__getDb().jobs[0]);
+ok("it greets them by first name", paidMsg.startsWith("Hi Marcus"), paidMsg);
+ok("it names the job that was done", paidMsg.includes("stump grinding"), paidMsg);
+ok("it carries the review link", paidMsg.includes("/review.html?v="), paidMsg);
+ok("it signs off as the business", paidMsg.includes("Devon's Tree Care"), paidMsg);
+ok("a paid job asks for no money", !/outstanding/.test(paidMsg), paidMsg);
+const owedMsg = A.postJobMessage(A.__getDb().customers[0], A.__getDb().jobs[1]);
+ok("an unpaid job states the balance",
+   owedMsg.includes("$100.00") && owedMsg.includes("outstanding"), owedMsg);
+ok("the message stays inside two SMS segments", paidMsg.length <= 306, paidMsg.length + " chars");
+ok("Done opens the message instead of a toast button",
+   script.includes("openSms(c,j,postJobMessage(c,j),true)") && !script.includes("toastAction"));
+
+/* ---------- review request ----------
+   Texted after a job is done. review.html routes five stars to Google and anything less
+   to private feedback, but keeps the Google link visible either way -- blocking it would
+   be review gating, which Google prohibits. */
+A.__setDb(A.normalize({
+  customers: [{ id: 1, name: "Marcus Webb", phone: "+15550102", log: [] }],
+  jobs: [{ id: 3, customerId: 1, service: "Stump Grinding", price: 180,
+           date: "2026-10-14", status: "completed", collected: 180, completedAt: 1 }],
+  settings: { business: { name: "Devon's Tree Care", notify: "devon@example.com" },
+              services: K.DEFAULT_SERVICES },
+  seqC: 2, seqJ: 4,
+}));
+const rlink = A.reviewLink(3);
+ok("a review link is built", !!rlink, String(rlink));
+ok("it points at the published review page",
+   rlink.indexOf("/devons-tree-care/review.html?v=") > 0, rlink);
+ok("it is versioned against a cached page", /review\.html\?v=\d+&d=/.test(rlink), rlink);
+const rp = JSON.parse(Buffer.from(
+  A.reviewPayload(3).replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"));
+eq("the payload greets them by first name", rp.n, "Marcus");
+eq("the payload names the job", rp.s, "Stump Grinding");
+eq("the payload carries where feedback goes", rp.e, "devon@example.com");
+ok("the payload carries no phone, address or price",
+   !("ph" in rp) && !("a" in rp) && !("p" in rp), Object.keys(rp).join(","));
+ok("the whole link fits an SMS", rlink.length < 340, rlink.length + " chars");
+ok("no link for a job that does not exist", A.reviewLink(999) === null);
+
+const reviewHtml = fs.readFileSync(path.join(ROOT, "review.html"), "utf8");
+ok("the review page offers five stars",
+   reviewHtml.includes("[1,2,3,4,5].map") && reviewHtml.includes('class="star"'));
+ok("five goes to Google and under five opens feedback",
+   /hi\.classList\.toggle\("show",\s*n===5\)/.test(reviewHtml) &&
+   /fb\.classList\.toggle\("show",\s*n<5\)/.test(reviewHtml));
+// The compliance line: a low rating opens the feedback box, and the Google link stays on
+// screen under it. Remove these and the page becomes review gating.
+ok("a low rating still shows the Google link",
+   reviewHtml.includes("Happy to say it publicly too?") &&
+   reviewHtml.includes("Still happy to post it publicly?"));
+ok("the Google listing is a single constant",
+   (reviewHtml.match(/var GOOGLE_REVIEW=/g) || []).length === 1);
+ok("feedback goes to the address in the payload, not a baked-in one",
+   reviewHtml.includes('encodeURIComponent(d.e)'));
+
 /* ---------- editing a client from the job sheet ----------
    The phone and address boxes on a job sheet write through to the client's card, so a
    wrong number gets fixed where it is noticed. */

@@ -63,6 +63,34 @@ detailing app does, it still does; this lists only what changed.
   of going to find the client first. Extracted as `applyClientEdits()` so the gate can
   cover add, change, clear, trim and a missing client.
 
+### Review requests and the post-job message
+
+- **`review.html`** — the client taps a star rating. Five opens Devon's Google listing;
+  under five opens a private feedback box that emails straight to him. The Google link
+  stays visible on the feedback screen and again on the thank-you screen, so nobody is
+  *prevented* from posting publicly. That is deliberate: routing only happy customers to
+  Google is review gating, which Google's content policy prohibits and which can cost a
+  business its whole review history. Two tests fail if those links are removed.
+- **Marking a job Done opens the post-job message.** It used to be a toast with an "Ask
+  for a review" button that was easy to miss. Now the message sheet opens by itself,
+  pre-written: first name, what was done, the balance if any is outstanding, and the
+  review link. Devon edits anything he likes and presses send; closing it costs nothing,
+  the job is already saved. A sent one counts as the review ask, so the button on the job
+  stops nagging.
+- `★ Ask for review` also sits in the action bar of any completed job, for asking later.
+- Devon's Google listing is one constant at the top of `review.html`. It currently points
+  at his knowledge panel; swapping in the `g.page/r/.../review` link from Google Business
+  Profile → "Ask for reviews" opens the review box directly.
+- The business name moved out of the texted payload and into the page, which shortened
+  the link — the whole message is two SMS segments.
+- `toastAction()` deleted; nothing called it any more.
+
+### Money formatting
+
+- `money()` and `money2()` were formatting with the device's locale while printing a "$",
+  so a phone set to a comma-decimal locale rendered a Canadian invoice as "$100,00".
+  Pinned to `en-CA`.
+
 ### Confirmation link
 
 - `confirmPayload()` split out of `confirmLink()`, so the packed appointment can be read
@@ -79,7 +107,7 @@ detailing app does, it still does; this lists only what changed.
 
 ### Tests
 
-`node tests/run-tests.js` — 83 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 105 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

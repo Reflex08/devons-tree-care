@@ -13,7 +13,19 @@ job sheet — client, services, date, time, notes, and nothing else.
 
 Rolling 7-day schedule · clients · multi-service jobs (trim + grind + haul-away on one
 visit) · dashboard against a 15-job month · one-tap confirmation link with tree-care terms
-· CSV export and local backups.
+· a post-job message that writes itself when a job is marked Done · star-rating review
+requests · CSV export and local backups.
+
+### A note on the review page
+
+`review.html` sends five-star ratings to Google and anything lower to a private feedback
+box — but it keeps the Google link on screen either way. Hiding it from unhappy customers
+is "review gating": Google's content policy bans it, and the penalty can be the removal of
+every review the business has. Edit that page freely; leave those two links alone.
+
+Devon's listing is the `GOOGLE_REVIEW` constant at the top of `review.html`. Replace it
+with the `g.page/r/.../review` link from Google Business Profile → "Ask for reviews" and
+the review box opens directly instead of the knowledge panel.
 
 The job sheet is five fields on purpose. Anything added back to it has to earn its place,
 and a test fails if the trees field comes back.
@@ -77,7 +89,7 @@ both one day's booking, so a job count tracks a busy month better than a dollar 
 node tests/run-tests.js
 ```
 
-83 checks over the service catalogue, seeding, the confirmation payload, multi-service
+105 checks over the service catalogue, seeding, the confirmation payload, multi-service
 totals, settings backfill, the storage namespace, and the fields that are meant to stay
 gone. No framework. Run it before shipping any edit.
 

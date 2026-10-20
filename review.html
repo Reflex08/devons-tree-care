@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#e8f2e7">
+<title>How did we do?</title>
+<style>
+  /* Same palette as the confirmation page: forest green, cream, white card. */
+  :root{
+    --ink:#1d3326; --muted:#5f7568; --faint:#93a899;
+    --cream:#f4f9f3; --card:#ffffff; --wash:#e8f2e7; --line:#d5e3d4;
+    --moss:#5ac77f; --moss-d:#3f9e63; --moss-ink:#06240f;
+    --bark:#2f5a3c;
+    --leaf:#3f7d52; --leaf-soft:#e4f0e5;
+    --star:#f2b53d; --star-off:#dbe6da;
+  }
+  *{box-sizing:border-box;min-width:0}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--cream);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .top{position:absolute;left:0;right:0;top:0;height:250px;z-index:0;
+    background:linear-gradient(#dcefdb 0,#eaf4e9 55%,var(--cream) 100%)}
+  .wrap{position:relative;z-index:1;width:100%;max-width:412px;margin:0 auto;padding:30px 20px 56px}
+  .brand{text-align:center;margin-bottom:6px}
+  .brand img{width:132px;height:auto;display:block;margin:0 auto}
+  .word{display:none;text-align:center;font-size:21px;font-weight:800;color:var(--bark);
+    letter-spacing:-.3px;margin-bottom:6px}
+  .greet{text-align:center;font-size:26px;font-weight:800;letter-spacing:-.5px;
+    color:var(--bark);margin-top:14px}
+  .lede{text-align:center;color:var(--muted);font-size:15px;line-height:1.5;
+    margin:8px auto 0;max-width:30ch}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;
+    padding:24px 20px;margin-top:22px;
+    box-shadow:0 1px 2px rgba(31,74,46,.04), 0 12px 32px rgba(31,74,46,.07)}
+  .svc{text-align:center;font-size:14px;font-weight:700;color:var(--muted);
+    margin-bottom:18px;overflow-wrap:anywhere}
+
+  .stars{display:flex;justify-content:center;gap:4px}
+  .star{border:0;background:none;padding:4px 2px;cursor:pointer;line-height:1;
+    font-size:40px;color:var(--star-off);transition:transform .12s,color .12s;
+    -webkit-tap-highlight-color:transparent}
+  .star:hover,.star:focus-visible{transform:scale(1.12)}
+  .star.on{color:var(--star)}
+  .star:focus-visible{outline:2px solid var(--moss-d);outline-offset:2px;border-radius:6px}
+  .hint{text-align:center;color:var(--faint);font-size:12.5px;margin-top:12px;
+    letter-spacing:.02em}
+
+  .panel{display:none;margin-top:20px}
+  .panel.show{display:block}
+  label.fl{display:block;font-size:13px;font-weight:800;color:var(--bark);margin-bottom:7px}
+  textarea{width:100%;min-height:118px;resize:vertical;border:1px solid var(--line);
+    border-radius:12px;padding:12px 13px;font:inherit;font-size:15px;color:var(--ink);
+    background:var(--cream)}
+  textarea:focus{outline:2px solid var(--moss-d);outline-offset:1px}
+  .cta{display:block;width:100%;border:0;border-radius:13px;padding:16px 18px;
+    font:inherit;font-size:16.5px;font-weight:800;cursor:pointer;margin-top:14px;
+    background:var(--moss);color:var(--moss-ink)}
+  .cta:hover{background:var(--moss-d);color:#fff}
+  .cta[disabled]{background:var(--wash);color:var(--faint);cursor:not-allowed}
+  .alt{display:block;text-align:center;margin-top:16px;font-size:13.5px;
+    color:var(--muted);line-height:1.5}
+  .alt a{color:var(--leaf);font-weight:700}
+
+  .done{text-align:center;padding:8px 0 2px}
+  .ck{width:58px;height:58px;border-radius:50%;background:var(--leaf-soft);color:var(--leaf);
+    font-size:30px;font-weight:800;line-height:58px;margin:0 auto 14px}
+  .headline{font-size:20px;font-weight:800;color:var(--bark)}
+  .sub{color:var(--muted);font-size:14.5px;margin-top:8px;line-height:1.5}
+  .foot{text-align:center;color:var(--faint);font-size:12.5px;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="top"></div>
+<div class="wrap"><div id="app"></div></div>
+
+<script>
+"use strict";
+/* Devon's Tree Care — review request page.
+   The CRM texts a link carrying the client's first name and the job, nothing else. No
+   server and no database: the link IS the record, same as the confirmation page. */
+
+/* Devon's Google listing. The search URL below opens his knowledge panel, where "Write a
+   review" is one tap. Better: in Google Business Profile, press "Ask for reviews" and
+   paste the https://g.page/r/..../review link it gives you here -- that one opens the
+   review box directly. */
+var GOOGLE_REVIEW="https://www.google.com/search?q=Devon%27s+tree+care&kgmid=/g/11mdnzh8bc";
+/* The page belongs to one business, so the name lives here rather than riding inside
+   every texted link. */
+var BUSINESS="Devon's Tree Care";
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(m){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];});}
+function digits(p){return String(p||"").replace(/[^\d]/g,"");}
+function fmtDate(iso){if(!iso)return"";var d=new Date(iso+"T12:00:00");
+  if(isNaN(d))return iso;
+  return d.toLocaleDateString("en-US",{month:"long",day:"numeric"});}
+function parseData(){
+  try{
+    var q=new URLSearchParams(location.search).get("d");
+    if(!q)return null;
+    var b=q.replace(/-/g,"+").replace(/_/g,"/");
+    while(b.length%4)b+="=";
+    var o=JSON.parse(decodeURIComponent(escape(atob(b))));
+    if(!o||!o.n)return null;
+    if(!o.b)o.b=BUSINESS;
+    return o;
+  }catch(e){return null;}
+}
+
+function render(){
+  var app=document.getElementById("app");
+  var d=parseData();
+  if(!d){
+    app.innerHTML='<div class="card"><div class="done">'+
+      '<div class="headline">This link is incomplete</div>'+
+      '<div class="sub">Ask us to send it again and it will open properly.</div>'+
+      '</div></div>';
+    return;
+  }
+  var google=d.g||GOOGLE_REVIEW;
+  var job=[d.s,d.dt?fmtDate(d.dt):""].filter(Boolean).join(" · ");
+
+  app.innerHTML=
+    '<div class="brand"><img id="logo" src="logo.png?v=1" alt="'+esc(d.b)+'"></div>'+
+    '<div class="word" id="wm">'+esc(d.b)+'</div>'+
+    '<div class="greet">How did we do'+(d.n?", "+esc(d.n):"")+'?</div>'+
+    '<div class="lede">It takes a few seconds and it genuinely helps a one-man outfit.</div>'+
+    '<div class="card">'+
+      (job?'<div class="svc">'+esc(job)+'</div>':'')+
+      '<div class="stars" id="stars" role="radiogroup" aria-label="Rating out of five">'+
+        [1,2,3,4,5].map(function(n){
+          return '<button type="button" class="star" data-n="'+n+'" role="radio" '+
+                 'aria-checked="false" aria-label="'+n+' star'+(n>1?'s':'')+'">★</button>';
+        }).join('')+
+      '</div>'+
+      '<div class="hint" id="hint">Tap a star</div>'+
+
+      '<div class="panel" id="fb">'+
+        '<label class="fl" for="msg">What would have made it a five?</label>'+
+        '<textarea id="msg" placeholder="Tell us straight — it comes to Devon, nobody else."></textarea>'+
+        '<button class="cta" id="send">Send to Devon</button>'+
+        '<div class="alt">Happy to say it publicly too? '+
+          '<a id="galt" href="'+esc(google)+'" target="_blank" rel="noopener">Leave a Google review</a></div>'+
+      '</div>'+
+
+      '<div class="panel" id="hi">'+
+        '<a class="cta" id="go" href="'+esc(google)+'" target="_blank" rel="noopener" '+
+          'style="text-align:center;text-decoration:none">Post it on Google</a>'+
+        '<div class="alt">Opens Google in a new tab. Thank you — it really does help.</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="foot">'+esc(d.b)+'</div>';
+
+  // If the mark cannot load, fall back to the plain wordmark rather than a broken image.
+  var logo=document.getElementById("logo");
+  if(logo)logo.onerror=function(){logo.style.display="none";
+    document.getElementById("wm").style.display="block";};
+
+  var stars=[].slice.call(document.querySelectorAll(".star"));
+  var hint=document.getElementById("hint");
+  var fb=document.getElementById("fb"), hi=document.getElementById("hi");
+  var rating=0;
+
+  function paint(n){
+    stars.forEach(function(s,i){
+      s.classList.toggle("on",i<n);
+      s.setAttribute("aria-checked",(i+1)===n?"true":"false");
+    });
+  }
+  function choose(n){
+    rating=n; paint(n);
+    hint.textContent=n===5?"Brilliant — thank you":"Thanks — tell us what went wrong";
+    // Five opens Google. Under five gets a private line to Devon first, and the Google
+    // link stays on screen underneath: nobody is blocked from reviewing publicly, which
+    // is the line between asking for feedback and review gating.
+    hi.classList.toggle("show",n===5);
+    fb.classList.toggle("show",n<5);
+    if(n<5)setTimeout(function(){document.getElementById("msg").focus();},60);
+  }
+  stars.forEach(function(s){
+    s.onclick=function(){choose(+s.dataset.n);};
+    s.onkeydown=function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();choose(+s.dataset.n);}};
+  });
+
+  var send=document.getElementById("send");
+  if(send)send.onclick=function(){
+    var msg=(document.getElementById("msg").value||"").trim();
+    if(!msg){document.getElementById("msg").focus();return;}
+    send.disabled=true; send.textContent="Sending…";
+
+    // Straight to Devon's inbox. Fire-and-forget: the thank-you shows either way, because
+    // a failed POST is not the customer's problem.
+    if(d.e){
+      try{
+        fetch("https://formsubmit.co/ajax/"+encodeURIComponent(d.e),{method:"POST",
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({
+            _subject:rating+"★ feedback — "+(d.n||"a client")+(d.s?" ("+d.s+")":""),
+            _template:"table",
+            rating:rating+" out of 5",
+            client:d.n||"—",
+            job:d.s||"—",
+            job_date:d.dt?fmtDate(d.dt):"—",
+            feedback:msg,
+            sent_at:new Date().toString()
+          })}).catch(function(){});
+      }catch(e){}
+    }
+    var card=send.closest(".card");
+    card.innerHTML='<div class="done"><div class="ck">✓</div>'+
+      '<div class="headline">Thank you — that’s with Devon</div>'+
+      '<div class="sub">He reads every one of these himself, and he’ll be in touch if '+
+        'something needs putting right.</div>'+
+      '<div class="alt" style="margin-top:18px">Still happy to post it publicly? '+
+        '<a href="'+esc(google)+'" target="_blank" rel="noopener">Leave a Google review</a></div>'+
+      '</div>';
+  };
+}
+render();
+</script>
+</body>
+</html>

@@ -604,10 +604,13 @@ let jobCustMode="pick";   // "new" = type a client inline | "pick" = choose one 
 /* ---------------- Utils ---------------- */
 const $=s=>document.querySelector(s);
 const esc=s=>(s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* Locale pinned, not left to the device. These print a "$" in front, so a phone set to a
+   locale that uses comma decimals would otherwise render "$100,00" on a Canadian invoice. */
+const MONEY_LOCALE="en-CA";
 function money(n){n=+n||0;const neg=n<0;n=Math.abs(n);
-  const s=n%1===0?n.toLocaleString():n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const s=n%1===0?n.toLocaleString(MONEY_LOCALE):n.toLocaleString(MONEY_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2});
   return (neg?"-$":"$")+s;}
-function money2(n){return "$"+(+n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function money2(n){return "$"+(+n||0).toLocaleString(MONEY_LOCALE,{minimumFractionDigits:2,maximumFractionDigits:2});}
 function avatarColor(name){let h=0;for(let i=0;i<name.length;i++)h=name.charCodeAt(i)+((h<<5)-h);
   const c=["#38bdf8","#34d399","#a78bfa","#fbbf24","#fb7185","#2ab8e8","#f472b6","#a3e635"];return c[Math.abs(h)%c.length];}
 function initials(name){const p=(name||"").trim().split(/\s+/);return ((p[0]||"")[0]||"?").toUpperCase()+((p[1]||"")[0]||"").toUpperCase();}
@@ -624,10 +627,6 @@ function fmtDow(d){if(!d)return"";const x=new Date(d+"T00:00:00");return x.toLoc
 function fmtTime(t){if(!t)return"";const[h,m]=t.split(":").map(Number);const ap=h>=12?"PM":"AM";const hh=((h+11)%12)+1;return `${hh}:${String(m).padStart(2,"0")} ${ap}`;}
 function fmtWhen(ts){return new Date(ts).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"});}
 function toast(m,kind){const t=$("#toast");clearTimeout(toastTimer);t.textContent=m;t.className="toast show"+(kind?(" "+kind):"");toastTimer=setTimeout(()=>t.className="toast",kind==="err"?3400:2300);}
-function toastAction(m,btnLabel,fn){const t=$("#toast");clearTimeout(toastTimer);t.textContent=m;
-  const b=document.createElement("button");b.className="btn sm btn-primary";b.style.marginLeft="10px";b.textContent=btnLabel;
-  b.onclick=()=>{clearTimeout(toastTimer);t.className="toast";fn();};
-  t.appendChild(b);t.className="toast show ok";toastTimer=setTimeout(()=>t.className="toast",8000);}
 function addr1(c){return [c.street].filter(Boolean).join("");}
 function addrFull(c){const cityzip=[c.city,c.state].filter(Boolean).join(", ")+(c.zip?" "+c.zip:"");return [c.street,cityzip.trim()].filter(x=>x&&x.trim()).join(", ");}
 function mapsUrl(c){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(addrFull(c));}
@@ -1265,11 +1264,18 @@ function actionBar(el,c,job){
   box.innerHTML=
     `<a class="btn" href="tel:${esc(tel)}">📞 Call</a>`+
     `<button class="btn" data-act="text">💬 Text</button>`+
-    (conf?`<button class="btn" data-act="confirm">${conf.termsAcceptedAt?"✓ Confirmed":"📋 Confirm"}</button>`:"");
+    (conf?`<button class="btn" data-act="confirm">${conf.termsAcceptedAt?"✓ Confirmed":"📋 Confirm"}</button>`:"")+
+    // Asking before the work is finished reads badly, so this only appears once it is.
+    (conf&&conf.status==="completed"
+      ?`<button class="btn" data-act="review">${conf.reviewAskedAt?"★ Asked":"★ Ask for review"}</button>`:"");
   const t=box.querySelector('[data-act="text"]');
   if(t)t.onclick=()=>openSms(c,job||custNext(c.id)||custLast(c.id));
   const cf=box.querySelector('[data-act="confirm"]');
   if(cf)cf.onclick=()=>confirmAction(conf.id);
+  const rv=box.querySelector('[data-act="review"]');
+  if(rv)rv.onclick=()=>{
+    if(conf.reviewAskedAt&&!confirm(`Asked ${fmtWhen(conf.reviewAskedAt)}.\n\nSend the request again?`))return;
+    sendReviewRequest(conf.id);};
 }
 /* Shared by both sheets: send the link, or offer to resend/clear once it's confirmed. */
 function confirmAction(id){
@@ -1288,7 +1294,9 @@ function openCust(id){
   $("#cust-hsub").textContent=c?(addrFull(c)||""):"";
   $("#cust-delete").style.display=c?"inline-block":"none";
   $("#cust-addjob").style.display=c?"inline-block":"none";
-  actionBar("#cust-acts",c,c?custNext(c.id):null); // Confirm targets their next booking
+  // Confirm targets their next booking; with none left, the last finished job so the
+  // review request is still reachable from the client's card.
+  actionBar("#cust-acts",c,c?(custNext(c.id)||custLast(c.id)):null);
   draftLog=c?JSON.parse(JSON.stringify(c.log||[])):[];
   $("#cust-body").innerHTML=custForm(c);
   bindCustForm(c);
@@ -1582,10 +1590,10 @@ function completeJob(id){
   if(c){c.log=c.log||[];c.log.push({t:Date.now(),m:`✓ Completed ${j.service} (${money(j.price)})${jobBalance(j)>0?" — unpaid":""}`});}
   save();render();
   const doneMsg=jobBalance(j)>0?`Job done — ${money(jobBalance(j))} outstanding`:"Job done — paid ✓";
-  if(c&&c.phone) toastAction(doneMsg,"💬 Ask for a review",()=>openSms(c,j,
-    `Hi ${firstName(c.name)}, thanks for having us today! If you're happy with how it turned out, `+
-    `a quick Google review would mean a lot. — ${db.settings.business.name||""}`));
-  else toast(doneMsg,"ok");
+  toast(doneMsg,"ok");
+  // Straight into the post-job message rather than a toast button that is easy to miss.
+  // Closing it without sending costs nothing: the job is already saved and done.
+  if(c&&c.phone)setTimeout(()=>openSms(c,j,postJobMessage(c,j),true),260);
 }
 function dismissJob(){$("#job-overlay").classList.remove("show");editJob=null;}
 /* Clicking out saves, but only when there is something worth saving. In new-client mode
@@ -1679,6 +1687,40 @@ function confirmLink(id){
   if(!CONFIRM_BASE)return null;
   return CONFIRM_BASE+"?v="+CONFIRM_VER+"&d="+b64;
 }
+/* ---------------- Review request ----------------
+   Texted after a job is done. Same shape as the confirmation link: the payload IS the
+   record, there is nothing to look up. review.html asks for a rating, sends anything
+   under five straight to Devon as private feedback, and keeps the Google link on screen
+   either way. */
+const REVIEW_VER="1";   // bump on every review.html change
+const REVIEW_BASE="https://reflex08.github.io/devons-tree-care/review.html";
+function reviewPayload(id){
+  const j=db.jobs.find(x=>x.id===id); if(!j)return null;
+  const biz=db.settings.business||{};
+  const c=custById(j.customerId);
+  return btoa(unescape(encodeURIComponent(JSON.stringify({
+    n:firstName(c?c.name:""),s:j.service,dt:j.date,e:biz.notify||""
+  })))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function reviewLink(id){
+  const b64=reviewPayload(id); if(!b64||!REVIEW_BASE)return null;
+  return REVIEW_BASE+"?v="+REVIEW_VER+"&d="+b64;
+}
+/* Hands the link to the messages app — Devon presses send there, as with the confirm link. */
+function sendReviewRequest(id){
+  const j=db.jobs.find(x=>x.id===id); if(!j)return;
+  const c=custById(j.customerId), to=cleanNum(c&&c.phone);
+  if(!to){toast("No phone number on file for this client","err");return;}
+  const link=reviewLink(id); if(!link)return;
+  const body=`Hi ${firstName(c.name)} — thanks again for having us out. `+
+    `If you have a minute, how did we do? ${link}`;
+  if(c){c.log=c.log||[];c.log.push({t:Date.now(),m:"★ Review request texted"});}
+  j.reviewAskedAt=Date.now(); save();
+  window.location.href="sms:"+to+"?&body="+encodeURIComponent(body);
+  toast("Messages opened — press send there","ok");
+  if(editJob===id)openJob(id); else if(editCust)openCust(editCust);
+}
+
 /* The client confirms, not Devon — so this just hands the link to his messages app. */
 function sendConfirmLink(id){
   const j=db.jobs.find(x=>x.id===id); if(!j)return;
@@ -1711,10 +1753,23 @@ function fillVars(text,c,j){
     .replace(/\{price\}/gi,j.price?money(j.price):"")
     .replace(/\{balance\}/gi,bal);
 }
-function openSms(c,j,preset){
+/* The text that goes out the moment a job is marked done. One message, not a template
+   list: thanks, what was done, the balance if there is one, and the review link. Devon
+   can edit every word of it before it sends. */
+function postJobMessage(c,j){
+  const biz=(db.settings.business||{}).name||"";
+  const bal=jobBalance(j);
+  const link=reviewLink(j.id);
+  return `Hi ${firstName(c.name)} — all done with the ${j.service.toLowerCase()} today, `+
+    `thanks for having us out.`+
+    (bal>0?` There's ${money2(bal)} outstanding when you get a chance.`:``)+
+    (link?`\n\nIf you've got a minute, how did we do? ${link}`:``)+
+    (biz?`\n\n— ${biz}`:``);
+}
+function openSms(c,j,preset,postJob){
   if(!c){toast("No customer to text","err");return;}
-  smsCtx={c,j:j||null};
-  $("#sms-title").textContent="Text "+c.name;
+  smsCtx={c,j:j||null,postJob:!!postJob};
+  $("#sms-title").textContent=postJob?("Post-job message — "+c.name):("Text "+c.name);
   $("#sms-to").value=c.phone||"";
   $("#sms-body").value=preset||"";
   // The chips used to paste {tokens} that applying a template expanded. Nothing expands them
@@ -1725,7 +1780,9 @@ function openSms(c,j,preset){
   $("#sms-vars").querySelectorAll(".chip").forEach(b=>b.onclick=()=>insertAt($("#sms-body"),b.dataset.ins));
   updateCounter();
   $("#sms-send").textContent="📱 Open in app";
-  $("#sms-note").innerHTML=`Opens your messaging app with the text pre-filled — just press send.`;
+  $("#sms-note").innerHTML=postJob
+    ? `Written for you — edit anything, then press send. The link asks them to rate the job.`
+    : `Opens your messaging app with the text pre-filled — just press send.`;
   $("#sms-overlay").classList.add("show");
 }
 function updateCounter(){const len=$("#sms-body").value.length,seg=Math.max(1,Math.ceil(len/160));
@@ -1738,6 +1795,8 @@ $("#sms-send").onclick=()=>{
   const to=cleanNum($("#sms-to").value),body=$("#sms-body").value;
   if(!to){toast("Enter a phone number","err");return;}
   if(!body.trim()){toast("Message is empty","err");return;}
+  // A sent post-job message IS the review ask, so the button on the job stops nagging.
+  if(smsCtx.postJob&&smsCtx.j){const jj=db.jobs.find(x=>x.id===smsCtx.j.id);if(jj)jj.reviewAskedAt=Date.now();}
   window.location.href="sms:"+to+"?body="+encodeURIComponent(body); logTextOnCust(smsCtx.c,body); closeSms(); render();
 };
 function logTextOnCust(c,body){if(!c)return;const cc=custById(c.id);if(!cc)return;
