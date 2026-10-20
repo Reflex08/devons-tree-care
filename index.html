@@ -212,6 +212,11 @@
   .lg-total{margin-left:auto;color:#7cc4fa;font-weight:800}
   .ph-pill{display:inline-block;background:#0d0e12;border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px}
   .lc-chev{color:var(--faint);font-size:17px;font-weight:700;line-height:1}
+  /* The whole row opens the client's card, which is an editable form. Naming it beats
+     a bare chevron the owner has to guess at. */
+  .lc-edit{color:var(--brand);font-size:12px;font-weight:800;letter-spacing:.04em;
+    text-transform:uppercase;line-height:1}
+  .lead-card:hover .lc-edit{text-decoration:underline}
   .lc-arrow{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#0d0e12;color:var(--muted);flex-shrink:0;font-size:14px}
   .lc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
   .lc-tags .lchip{padding:2px 8px;font-size:11px}
@@ -1101,7 +1106,7 @@ function custCard(c){
         ${c.phone?`<div><span class="ph-pill">${esc(fmtPhone(c.phone))}</span></div>`:""}
         ${pills?`<div class="lc-tags">${pills}</div>`:""}</div>
       <div class="lc-right">${paid>0?`<span class="lchip">${money(paid)}</span>`:""}
-        <span class="lc-chev">›</span></div>
+        <span class="lc-edit">Edit</span><span class="lc-chev">›</span></div>
     </div>`;
 }
 
@@ -1279,7 +1284,7 @@ function confirmAction(id){
 }
 function openCust(id){
   editCust=id; custDirty=false; const c=id?custById(id):null;
-  $("#cust-title").textContent=c?c.name:"New Customer";
+  $("#cust-title").textContent=c?("Edit "+c.name):"New client";
   $("#cust-hsub").textContent=c?(addrFull(c)||""):"";
   $("#cust-delete").style.display=c?"inline-block":"none";
   $("#cust-addjob").style.display=c?"inline-block":"none";
@@ -1470,14 +1475,19 @@ function custBlockHTML(cid){
     .map(c=>`<option value="${c.id}" ${cid===c.id?"selected":""}>${esc(c.name)}${c.city?" — "+esc(c.city):""}</option>`).join("");
   return `
     <div class="field"><label>Client *</label><select id="jf-cust">${opts}</select></div>
-    <div class="field"><label>Address</label><input id="jf-address" value="${cc?esc(cc.street||""):""}">
-      <div class="hint">Saved on the client's card — edits here update it everywhere.
-        · <span style="color:var(--brand);cursor:pointer;font-weight:700" id="jf-mode">New client instead…</span></div></div>`;
+    <div class="grid2">
+      <div class="field"><label>Phone</label><input id="jf-phone" type="tel" value="${cc?esc(cc.phone||""):""}"></div>
+      <div class="field"><label>Address</label><input id="jf-address" value="${cc?esc(cc.street||""):""}"></div>
+    </div>
+    <div class="hint" style="margin:-4px 0 10px">Phone and address save to the client's card — fixing them here fixes them everywhere.
+      · <span style="color:var(--brand);cursor:pointer;font-weight:700" id="jf-mode">New client instead…</span></div>`;
 }
 function renderCustBlock(cid){const b=$("#jf-custbox"); if(!b)return; b.innerHTML=custBlockHTML(cid); bindCustBlock(cid);}
 function bindCustBlock(cid){
   const sel=$("#jf-cust");
-  if(sel)sel.onchange=()=>{const c=custById(+sel.value);$("#jf-address").value=c?(c.street||""):"";};
+  if(sel)sel.onchange=()=>{const c=custById(+sel.value);
+    $("#jf-address").value=c?(c.street||""):"";
+    const ph=$("#jf-phone"); if(ph)ph.value=c?(c.phone||""):"";};
   const m=$("#jf-mode");
   if(m)m.onclick=()=>{jobCustMode=jobCustMode==="new"?"pick":"new";renderCustBlock(cid);};
 }
@@ -1511,6 +1521,19 @@ function gatherJob(){
     status:prev?prev.status:"scheduled",notes:$("#jf-notes").value.trim(),
     collected:prev?(+prev.collected||0):0,payMethod:prev?(prev.payMethod||""):""};
 }
+/* The address and phone boxes on a job sheet edit the client's card itself — add, change
+   or clear — so a wrong number can be fixed from the job you noticed it on rather than by
+   going to find them. Pass phone as null to leave it alone. */
+function applyClientEdits(c,street,phone){
+  if(!c)return null;
+  const a=String(street==null?"":street).trim();
+  if(a!==(c.street||""))c.street=a;
+  if(phone!=null){
+    const raw=String(phone).trim(), ph=raw?(cleanNum(raw)||raw):"";
+    if(ph!==(c.phone||""))c.phone=ph;
+  }
+  return c;
+}
 function saveJob(keepOpen){
   const data=gatherJob();
   if(!data.services.length){toast("Add at least one service","err");return false;}
@@ -1523,8 +1546,8 @@ function saveJob(keepOpen){
     db.customers.push(c); data.customerId=c.id;
   }
   if(!data.customerId){toast("Pick a client for this job","err");const s=$("#jf-cust");if(s)s.focus();return false;}
-  const cAddr=custById(data.customerId); // address box edits the customer's card (add / change / clear)
-  if(cAddr){const a=$("#jf-address").value.trim();if(a!==(cAddr.street||""))cAddr.street=a;}
+  const pEl=$("#jf-phone");
+  applyClientEdits(custById(data.customerId),$("#jf-address").value,pEl?pEl.value:null);
   let wasCompleted=false, j;
   if(editJob){j=db.jobs.find(x=>x.id===editJob);wasCompleted=j.status==="completed";Object.assign(j,data);}
   else{j=Object.assign({id:db.seqJ++,created:Date.now(),completedAt:0},data);db.jobs.push(j);}

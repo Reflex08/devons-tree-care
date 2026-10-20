@@ -53,6 +53,16 @@ detailing app does, it still does; this lists only what changed.
   simply type is a misclick, and on a phone it is a thumb-sized hazard next to the price.
 - The running total has room under it before the date, so the sheet reads in blocks.
 
+### Editing a client
+
+- The client row now says **EDIT** instead of showing a bare chevron. Tapping it always
+  opened the editable card; nothing about that changed, it just says so now. The sheet's
+  own title reads "Edit <name>".
+- The job sheet gained a **Phone** box beside the address, and both write straight through
+  to the client's card — a wrong number gets fixed on the job where it was noticed instead
+  of going to find the client first. Extracted as `applyClientEdits()` so the gate can
+  cover add, change, clear, trim and a missing client.
+
 ### Confirmation link
 
 - `confirmPayload()` split out of `confirmLink()`, so the packed appointment can be read
@@ -69,7 +79,7 @@ detailing app does, it still does; this lists only what changed.
 
 ### Tests
 
-`node tests/run-tests.js` — 72 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 83 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

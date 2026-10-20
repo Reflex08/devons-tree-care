@@ -230,6 +230,24 @@ eq("a fee the owner chose is left alone",
      settings: { business: { name: "X", cancelFeePct: 35 }, services: K.DEFAULT_SERVICES },
      seqC: 1, seqJ: 1 }).settings.business.cancelFeePct, 35);
 
+/* ---------- editing a client from the job sheet ----------
+   The phone and address boxes on a job sheet write through to the client's card, so a
+   wrong number gets fixed where it is noticed. */
+const who = { id: 1, name: "Marcus Webb", phone: "+15550102", street: "41 Granger Ave" };
+A.applyClientEdits(who, "9 Oak Lane", "(555) 987-6543");
+eq("the address is updated on the client", who.street, "9 Oak Lane");
+eq("the phone is cleaned and updated on the client", who.phone, "5559876543");
+A.applyClientEdits(who, "9 Oak Lane", null);
+eq("a null phone leaves the number alone", who.phone, "5559876543");
+A.applyClientEdits(who, "", "");
+eq("clearing the box clears the field", who.street, "");
+eq("clearing the phone box clears the number", who.phone, "");
+A.applyClientEdits(who, "  12 Elm St  ", "  ");
+eq("whitespace is trimmed off the address", who.street, "12 Elm St");
+eq("an all-space phone counts as cleared", who.phone, "");
+ok("a missing client is survivable", A.applyClientEdits(null, "x", "y") === null);
+ok("the client card names the Edit action", html.includes('class="lc-edit"'));
+
 /* ---------- the job sheet stays short ----------
    Devon wants as few boxes as possible, so the sheet is client, services, date, time,
    notes. Anything added back here has to earn its place. */
