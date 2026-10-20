@@ -63,6 +63,20 @@ detailing app does, it still does; this lists only what changed.
   of going to find the client first. Extracted as `applyClientEdits()` so the gate can
   cover add, change, clear, trim and a missing client.
 
+### Texted links show as a card, not a wall of URL
+
+- `review.html` and `confirm.html` now carry Open Graph tags — title, description,
+  `og:image` pointing at `icon-512.png`, plus a favicon and apple-touch-icon. iMessage,
+  WhatsApp and the rest build their preview card from these; without them a client just
+  saw 180 characters of base64.
+- The post-job message was rearranged so the **link is the last thing in it**. iMessage
+  previews the final URL in a message and draws the cleanest card when nothing trails it,
+  so the sign-off moved above the link.
+- `REVIEW_VER` 2 → 3 and `CONFIRM_VER` 1 → 2, so phones holding a cached copy of either
+  page fetch the new one.
+- Nine checks cover the tags on both pages, that `og:image` names a file that is actually
+  in the repo, and that a built message really does end on its URL.
+
 ### Messages — pre-written outreach to a whole list
 
 A fifth screen in the menu. Pick who, pick what, then tap down the list.
@@ -143,7 +157,7 @@ A fifth screen in the menu. Pick who, pick what, then tap down the list.
 
 ### Tests
 
-`node tests/run-tests.js` — 136 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 154 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

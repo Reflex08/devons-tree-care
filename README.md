@@ -93,7 +93,7 @@ both one day's booking, so a job count tracks a busy month better than a dollar 
 node tests/run-tests.js
 ```
 
-136 checks over the service catalogue, seeding, the confirmation payload, multi-service
+154 checks over the service catalogue, seeding, the confirmation payload, multi-service
 totals, settings backfill, the storage namespace, and the fields that are meant to stay
 gone. No framework. Run it before shipping any edit.
 

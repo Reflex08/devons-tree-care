@@ -1810,7 +1810,7 @@ async function pullConfirms(){
    no server and no database. Keep the payload keys short — a long URL gets mangled by some
    SMS apps. `ph` is optional: with no separate business line the link goes out from the
    owner's own phone, so the client already has that thread to reply in. */
-const CONFIRM_VER="1";   // bump on every confirm.html change
+const CONFIRM_VER="2";   // bump on every confirm.html change
 /* The client opens this on their own phone, so confirm.html needs a public URL. Empty
    it and the Confirm button says so rather than texting a link that cannot open. */
 const CONFIRM_BASE="https://reflex08.github.io/devons-tree-care/confirm.html";
@@ -1843,7 +1843,7 @@ function confirmLink(id){
    record, there is nothing to look up. review.html asks for a rating, sends anything
    under five straight to Devon as private feedback, and keeps the Google link on screen
    either way. */
-const REVIEW_VER="2";   // bump on every review.html change
+const REVIEW_VER="3";   // bump on every review.html change
 const REVIEW_BASE="https://reflex08.github.io/devons-tree-care/review.html";
 function reviewPayload(id){
   const j=db.jobs.find(x=>x.id===id); if(!j)return null;
@@ -1911,11 +1911,13 @@ function postJobMessage(c,j){
   const biz=(db.settings.business||{}).name||"";
   const bal=jobBalance(j);
   const link=reviewLink(j.id);
+  // The link is last on purpose: iMessage previews the final URL in a message and
+  // renders the card cleanest when nothing trails it.
   return `Hi ${firstName(c.name)} — all done with the ${j.service.toLowerCase()} today, `+
     `thanks for having us out.`+
     (bal>0?` There's ${money2(bal)} outstanding when you get a chance.`:``)+
-    (link?`\n\nIf you've got a minute, how did we do? ${link}`:``)+
-    (biz?`\n\n— ${biz}`:``);
+    (biz?`\n\n— ${biz}`:``)+
+    (link?`\n\nIf you've got a minute, how did we do?\n${link}`:``);
 }
 function openSms(c,j,preset,postJob){
   if(!c){toast("No customer to text","err");return;}

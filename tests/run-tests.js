@@ -232,6 +232,36 @@ eq("a fee the owner chose is left alone",
      settings: { business: { name: "X", cancelFeePct: 35 }, services: K.DEFAULT_SERVICES },
      seqC: 1, seqJ: 1 }).settings.business.cancelFeePct, 35);
 
+/* ---------- link previews ----------
+   iMessage draws its card from Open Graph tags and previews the LAST url in a message,
+   so the link has to come last and both client-facing pages need the tags. */
+// read locally: reviewHtml is declared further down the file
+const prevDocs = [["review.html", fs.readFileSync(path.join(ROOT, "review.html"), "utf8")],
+                  ["confirm.html", fs.readFileSync(path.join(ROOT, "confirm.html"), "utf8")]];
+for (const [label, doc] of prevDocs) {
+  for (const tag of ["og:title", "og:description", "og:image", "og:url", "og:site_name"]) {
+    ok(label + " carries " + tag, doc.includes('property="' + tag + '"'));
+  }
+  ok(label + " points og:image at a real file in the repo",
+     /og:image" content="https:\/\/\S+\/(icon-512\.png|logo\.png)"/.test(doc));
+  ok(label + " gives the card an icon too", doc.includes('rel="apple-touch-icon"'));
+}
+ok("the og:image actually exists", fs.existsSync(path.join(ROOT, "icon-512.png")));
+// Build a real message and check the url is the last thing in it.
+A.__setDb(A.normalize({
+  customers: [{ id: 1, name: "Marcus Webb", phone: "+15550102", log: [] }],
+  jobs: [{ id: 1, customerId: 1, service: "Stump Grinding", price: 180, collected: 180,
+           date: "2026-10-14", status: "completed", completedAt: 1 }],
+  settings: { business: { name: "Devon's Tree Care" }, services: K.DEFAULT_SERVICES },
+  seqC: 2, seqJ: 2,
+}));
+const pjm = A.postJobMessage(A.__getDb().customers[0], A.__getDb().jobs[0]);
+const urlAt = pjm.indexOf("https://");
+ok("the message carries a link at all", urlAt > -1, pjm);
+ok("nothing follows the link, so iMessage can draw the card",
+   pjm.slice(urlAt).trim().split(/\s/).length === 1, JSON.stringify(pjm.slice(urlAt)));
+ok("the sign-off moved above it", pjm.indexOf("Devon's Tree Care") < urlAt, pjm);
+
 /* ---------- Messages: audiences and mass outreach ----------
    sms: with many recipients opens one group chat, so this is a queue, not a blast. */
 const DAY = 864e5;
