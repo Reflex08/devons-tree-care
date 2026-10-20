@@ -14,7 +14,7 @@ job sheet — client, services, date, time, notes, and nothing else.
 Rolling 7-day schedule · clients · multi-service jobs (trim + grind + haul-away on one
 visit) · dashboard against a 15-job month · one-tap confirmation link with tree-care terms
 · a post-job message that writes itself when a job is marked Done · star-rating review
-requests · CSV export and local backups.
+requests · tap-to-navigate addresses (Apple Maps) · CSV export and local backups.
 
 ### A note on the review page
 
@@ -89,7 +89,7 @@ both one day's booking, so a job count tracks a busy month better than a dollar 
 node tests/run-tests.js
 ```
 
-105 checks over the service catalogue, seeding, the confirmation payload, multi-service
+119 checks over the service catalogue, seeding, the confirmation payload, multi-service
 totals, settings backfill, the storage namespace, and the fields that are meant to stay
 gone. No framework. Run it before shipping any edit.
 

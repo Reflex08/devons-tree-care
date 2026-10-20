@@ -63,6 +63,20 @@ detailing app does, it still does; this lists only what changed.
   of going to find the client first. Extracted as `applyClientEdits()` so the gate can
   cover add, change, clear, trim and a missing client.
 
+### Tap an address, get a route
+
+- Addresses are links that open **Apple Maps with the destination already set**
+  (`maps.apple.com/?daddr=...&dirflg=d`), on the dashboard job cards, the client sheet
+  and the job sheet. Previously only the job card showed one and it opened a Google
+  *search*, which still needed a tap to start the drive.
+- Anything that is not an iPhone, iPad or Mac gets Google directions instead, so the link
+  is never dead on a borrowed Android. iPadOS reports itself as Macintosh; both have
+  Apple Maps, so that is correct rather than a bug.
+- Split into `isApple()` and a pure `mapsHref(address, apple)` so the gate can check both
+  branches without a browser. Fifteen checks cover platform detection, driving mode, an
+  empty address, and an "&" in a street name (which would otherwise end the `daddr`
+  parameter and send him nowhere).
+
 ### Review requests and the post-job message
 
 - **`review.html`** — the client taps a star rating. Five opens Devon's Google listing;
@@ -107,7 +121,7 @@ detailing app does, it still does; this lists only what changed.
 
 ### Tests
 
-`node tests/run-tests.js` — 105 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 119 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

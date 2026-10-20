@@ -274,6 +274,10 @@
   .svc-total{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0 14px;font-weight:800}
   .svc-total .t{font-size:19px}
   .modal-head .hsub{color:var(--muted);font-size:12.5px;font-weight:600;margin-top:2px}
+  /* An address is a link to the drive, so it has to read as one and be thumb-sized. */
+  a.maps{color:var(--brand);text-decoration:none;font-weight:700;
+    display:inline-block;padding:3px 0;min-height:24px}
+  a.maps:hover,a.maps:focus-visible{text-decoration:underline}
   .x{border:0;background:transparent;font-size:24px;color:var(--faint);line-height:1;padding:2px 7px;border-radius:8px}
   .x:hover{background:var(--hover);color:var(--ink)}
   .modal-body{padding:20px 22px;max-height:70vh;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
@@ -635,7 +639,24 @@ function fmtWhen(ts){return new Date(ts).toLocaleString(undefined,{month:"short"
 function toast(m,kind){const t=$("#toast");clearTimeout(toastTimer);t.textContent=m;t.className="toast show"+(kind?(" "+kind):"");toastTimer=setTimeout(()=>t.className="toast",kind==="err"?3400:2300);}
 function addr1(c){return [c.street].filter(Boolean).join("");}
 function addrFull(c){const cityzip=[c.city,c.state].filter(Boolean).join(", ")+(c.zip?" "+c.zip:"");return [c.street,cityzip.trim()].filter(x=>x&&x.trim()).join(", ");}
-function mapsUrl(c){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(addrFull(c));}
+/* Tapping an address should start the drive, not open a search result. iPadOS reports
+   itself as Macintosh, which is fine -- both have Apple Maps. Anything else gets Google
+   directions, so the link is never dead on a borrowed Android. */
+function isApple(ua){return /iPad|iPhone|iPod|Macintosh/.test(ua||"");}
+function mapsHref(address,apple){
+  const q=encodeURIComponent(String(address||"").trim());
+  if(!q)return "";
+  return apple
+    ? "https://maps.apple.com/?daddr="+q+"&dirflg=d"
+    : "https://www.google.com/maps/dir/?api=1&destination="+q;
+}
+function mapsUrl(c){return mapsHref(addrFull(c),isApple(navigator.userAgent));}
+/* The address as a tappable chip. Same markup everywhere it appears. */
+function mapsLink(c){
+  const a=addrFull(c); if(!a)return "";
+  return `<a class="maps" href="${esc(mapsUrl(c))}" target="_blank" rel="noopener"
+    title="Directions to ${esc(a)}">\u{1F4CD} ${esc(a)}</a>`;
+}
 
 /* ---------------- Aggregates ---------------- */
 const custById=id=>db.customers.find(c=>c.id===id);
@@ -1011,7 +1032,7 @@ function jobCard(j,overdueFlag){
         ${bal>0?`<span class="badge b-${ps}">${money(bal)} due</span>`:""}
         ${j.termsAcceptedAt&&j.status!=="completed"?`<span class="badge b-active">✓ Confirmed</span>`:""}
       </div>
-      <div class="who">👤 ${esc(c.name)}${c.phone?` · <a href="tel:${esc(cleanNum(c.phone))}">${esc(fmtPhone(c.phone))}</a>`:""}${addr1(c)?` · 📍 <a href="${mapsUrl(c)}" target="_blank" rel="noopener">${esc(addrFull(c))}</a>`:""}</div>
+      <div class="who">👤 ${esc(c.name)}${c.phone?` · <a href="tel:${esc(cleanNum(c.phone))}">${esc(fmtPhone(c.phone))}</a>`:""}${addrFull(c)?` · ${mapsLink(c)}`:""}</div>
       ${j.notes?`<div class="who" style="color:var(--faint)">📝 ${esc(j.notes)}</div>`:""}
     </div>
     <div class="actions">${actions}</div>
@@ -1297,7 +1318,7 @@ function confirmAction(id){
 function openCust(id){
   editCust=id; custDirty=false; const c=id?custById(id):null;
   $("#cust-title").textContent=c?("Edit "+c.name):"New client";
-  $("#cust-hsub").textContent=c?(addrFull(c)||""):"";
+  $("#cust-hsub").innerHTML=c?mapsLink(c):"";
   $("#cust-delete").style.display=c?"inline-block":"none";
   $("#cust-addjob").style.display=c?"inline-block":"none";
   // Confirm targets their next booking; with none left, the last finished job so the
@@ -1414,7 +1435,7 @@ function openJob(id,focusPay,presetCust,presetDate){
   const cid=j?j.customerId:(presetCust||null);
   $("#job-title").textContent=j?"Edit Job":"New Job";
   const c=cid?custById(cid):null;
-  $("#job-hsub").textContent=c?(c.name+(addrFull(c)?" · "+addrFull(c):"")):"";
+  $("#job-hsub").innerHTML=c?(esc(c.name)+(addrFull(c)?" · "+mapsLink(c):"")):"";
   $("#job-delete").style.display=j?"inline-block":"none";
   // A new job books. A saved one is marked done — or put back if it was marked by mistake.
   const sv=$("#job-save");

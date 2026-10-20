@@ -230,6 +230,42 @@ eq("a fee the owner chose is left alone",
      settings: { business: { name: "X", cancelFeePct: 35 }, services: K.DEFAULT_SERVICES },
      seqC: 1, seqJ: 1 }).settings.business.cancelFeePct, 35);
 
+/* ---------- tap an address, get a route ---------- */
+ok("an iPhone gets Apple Maps", A.isApple("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"));
+ok("an iPad gets Apple Maps (iPadOS reports as Macintosh)",
+   A.isApple("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"));
+ok("an Android does not", !A.isApple("Mozilla/5.0 (Linux; Android 14; Pixel 8)"));
+ok("an unknown agent does not", !A.isApple("") && !A.isApple(undefined));
+
+const apple = A.mapsHref("41 Granger Ave, Toronto", true);
+eq("Apple Maps gets a destination, not a search",
+   apple, "https://maps.apple.com/?daddr=41%20Granger%20Ave%2C%20Toronto&dirflg=d");
+ok("and it asks for driving directions", apple.includes("dirflg=d"));
+const goog = A.mapsHref("41 Granger Ave, Toronto", false);
+ok("everyone else gets Google directions, never a dead link",
+   goog.startsWith("https://www.google.com/maps/dir/?api=1&destination="), goog);
+eq("no address, no link", A.mapsHref("", true), "");
+eq("whitespace is not an address", A.mapsHref("   ", true), "");
+// An "&" in a street name would otherwise end the daddr parameter and send him nowhere.
+// Apostrophes stay literal -- encodeURIComponent leaves them, and they are legal in a query.
+ok("an ampersand in the address cannot break the url",
+   A.mapsHref("12 O'Brien & Sons Rd", true).includes("%26") &&
+   A.mapsHref("12 O'Brien & Sons Rd", true).split("&").length === 2,
+   A.mapsHref("12 O'Brien & Sons Rd", true));
+
+A.__setDb(A.normalize({
+  customers: [{ id: 1, name: "Marcus Webb", phone: "+15550102", street: "41 Granger Ave",
+                city: "Toronto", log: [] },
+              { id: 2, name: "No Address", phone: "+15550109", log: [] }],
+  jobs: [], settings: K.DEFAULT_SETTINGS(), seqC: 3, seqJ: 1,
+}));
+const chip = A.mapsLink(A.__getDb().customers[0]);
+ok("the chip carries the city as well as the street",
+   chip.includes("41 Granger Ave") && chip.includes("Toronto"), chip);
+ok("the chip opens outside the app", chip.includes('target="_blank"') && chip.includes("noopener"));
+eq("a client with no address gets no chip", A.mapsLink(A.__getDb().customers[1]), "");
+ok("the chip is styled as a link", html.includes("a.maps{"));
+
 /* ---------- the post-job message ----------
    Marking a job Done opens this straight away, pre-written. It is the review ask, so a
    sent one stops the button nagging. */
