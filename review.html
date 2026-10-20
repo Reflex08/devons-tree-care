@@ -143,8 +143,6 @@ function render(){
         '<label class="fl" for="msg">What would have made it a five?</label>'+
         '<textarea id="msg" placeholder="Tell us straight — it comes to Devon, nobody else."></textarea>'+
         '<button class="cta" id="send">Send to Devon</button>'+
-        '<div class="alt">Happy to say it publicly too? '+
-          '<a id="galt" href="'+esc(google)+'" target="_blank" rel="noopener">Leave a Google review</a></div>'+
       '</div>'+
 
       '<div class="panel" id="hi">'+
@@ -174,9 +172,10 @@ function render(){
   function choose(n){
     rating=n; paint(n);
     hint.textContent=n===5?"Brilliant — thank you":"Thanks — tell us what went wrong";
-    // Five opens Google. Under five gets a private line to Devon first, and the Google
-    // link stays on screen underneath: nobody is blocked from reviewing publicly, which
-    // is the line between asking for feedback and review gating.
+    // Five opens Google. Under five opens a private line to Devon. The Google link was
+    // removed from this panel at the owner's request; it remains on the thank-you screen
+    // after feedback is sent. Note that steering lower ratings away from the public
+    // listing is what Google calls review gating.
     hi.classList.toggle("show",n===5);
     fb.classList.toggle("show",n<5);
     if(n<5)setTimeout(function(){document.getElementById("msg").focus();},60);

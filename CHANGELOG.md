@@ -99,11 +99,14 @@ A fifth screen in the menu. Pick who, pick what, then tap down the list.
 ### Review requests and the post-job message
 
 - **`review.html`** — the client taps a star rating. Five opens Devon's Google listing;
-  under five opens a private feedback box that emails straight to him. The Google link
-  stays visible on the feedback screen and again on the thank-you screen, so nobody is
-  *prevented* from posting publicly. That is deliberate: routing only happy customers to
-  Google is review gating, which Google's content policy prohibits and which can cost a
-  business its whole review history. Two tests fail if those links are removed.
+  under five opens a private feedback box that emails straight to him.
+- The Google link was removed from the feedback panel at the owner's request
+  (2026-10-20). It remains on the thank-you screen shown after feedback is sent, which is
+  now the only route from a low rating to the public listing. Steering unhappy customers
+  away from a public review is what Google calls review gating; its content policy
+  prohibits it and the stated penalty can be removal of a business's whole review
+  history. Recorded here because the risk sits with the listing, not the code.
+  `REVIEW_VER` bumped to 2 so phones holding the old page get the new one.
 - **Marking a job Done opens the post-job message.** It used to be a toast with an "Ask
   for a review" button that was easy to miss. Now the message sheet opens by itself,
   pre-written: first name, what was done, the balance if any is outstanding, and the
@@ -140,7 +143,7 @@ A fifth screen in the menu. Pick who, pick what, then tap down the list.
 
 ### Tests
 
-`node tests/run-tests.js` — 135 checks, all passing. The suite was re-pointed at the tree
+`node tests/run-tests.js` — 136 checks, all passing. The suite was re-pointed at the tree
 catalogue, the jobs goal, the split confirm payload and the new namespace, and it now
 guards the short job sheet: the trees field, its picker and the spinner CSS each have a
 check that fails if they come back.

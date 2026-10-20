@@ -377,10 +377,12 @@ ok("the review page offers five stars",
 ok("five goes to Google and under five opens feedback",
    /hi\.classList\.toggle\("show",\s*n===5\)/.test(reviewHtml) &&
    /fb\.classList\.toggle\("show",\s*n<5\)/.test(reviewHtml));
-// The compliance line: a low rating opens the feedback box, and the Google link stays on
-// screen under it. Remove these and the page becomes review gating.
-ok("a low rating still shows the Google link",
-   reviewHtml.includes("Happy to say it publicly too?") &&
+// The owner had the Google link taken off the feedback panel. What remains is the one on
+// the thank-you screen, which is the only thing still keeping a low rating from being
+// steered away from the public listing entirely -- review gating, in Google's terms.
+ok("the feedback panel no longer offers the Google link",
+   !reviewHtml.includes("Happy to say it publicly too?"));
+ok("the thank-you screen still does",
    reviewHtml.includes("Still happy to post it publicly?"));
 ok("the Google listing is a single constant",
    (reviewHtml.match(/var GOOGLE_REVIEW=/g) || []).length === 1);

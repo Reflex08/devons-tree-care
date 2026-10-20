@@ -1843,7 +1843,7 @@ function confirmLink(id){
    record, there is nothing to look up. review.html asks for a rating, sends anything
    under five straight to Devon as private feedback, and keeps the Google link on screen
    either way. */
-const REVIEW_VER="1";   // bump on every review.html change
+const REVIEW_VER="2";   // bump on every review.html change
 const REVIEW_BASE="https://reflex08.github.io/devons-tree-care/review.html";
 function reviewPayload(id){
   const j=db.jobs.find(x=>x.id===id); if(!j)return null;

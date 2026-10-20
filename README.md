@@ -19,9 +19,13 @@ requests · a Messages screen for pre-written outreach to a filtered list · tap
 ### A note on the review page
 
 `review.html` sends five-star ratings to Google and anything lower to a private feedback
-box — but it keeps the Google link on screen either way. Hiding it from unhappy customers
-is "review gating": Google's content policy bans it, and the penalty can be the removal of
-every review the business has. Edit that page freely; leave those two links alone.
+box. The Google link was removed from the feedback panel at the owner's request; one
+remains on the thank-you screen after feedback is sent.
+
+Steering unhappy customers away from the public listing is "review gating". Google's
+content policy bans it and the penalty can be removal of every review the business has.
+The remaining link on the thank-you screen is the only thing still separating this page
+from that; removing it too is a decision about the listing, not about the code.
 
 Devon's listing is the `GOOGLE_REVIEW` constant at the top of `review.html`. Replace it
 with the `g.page/r/.../review` link from Google Business Profile → "Ask for reviews" and
@@ -89,7 +93,7 @@ both one day's booking, so a job count tracks a busy month better than a dollar 
 node tests/run-tests.js
 ```
 
-135 checks over the service catalogue, seeding, the confirmation payload, multi-service
+136 checks over the service catalogue, seeding, the confirmation payload, multi-service
 totals, settings backfill, the storage namespace, and the fields that are meant to stay
 gone. No framework. Run it before shipping any edit.
 
