@@ -247,6 +247,15 @@ for (const [label, doc] of prevDocs) {
   ok(label + " gives the card an icon too", doc.includes('rel="apple-touch-icon"'));
 }
 ok("the og:image actually exists", fs.existsSync(path.join(ROOT, "icon-512.png")));
+
+/* Confirming is the end of it for the client -- no receipt text to send back. */
+{
+  const doc = prevDocs.find(d => d[0] === "confirm.html")[1];
+  ok("confirm.html asks the client for no text message", !doc.includes("sms:"));
+  ok("confirm.html does not redirect anywhere on confirm", !doc.includes("location.href=sms"));
+  ok("confirm.html still tells the CRM over the relay", doc.includes('fetch(d.r+"/confirm"'));
+  ok("confirm.html still emails the business", doc.includes("formsubmit.co/ajax/"));
+}
 // Build a real message and check the url is the last thing in it.
 A.__setDb(A.normalize({
   customers: [{ id: 1, name: "Marcus Webb", phone: "+15550102", log: [] }],

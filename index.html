@@ -1810,7 +1810,7 @@ async function pullConfirms(){
    no server and no database. Keep the payload keys short — a long URL gets mangled by some
    SMS apps. `ph` is optional: with no separate business line the link goes out from the
    owner's own phone, so the client already has that thread to reply in. */
-const CONFIRM_VER="2";   // bump on every confirm.html change
+const CONFIRM_VER="3";   // bump on every confirm.html change
 /* The client opens this on their own phone, so confirm.html needs a public URL. Empty
    it and the Confirm button says so rather than texting a link that cannot open. */
 const CONFIRM_BASE="https://reflex08.github.io/devons-tree-care/confirm.html";

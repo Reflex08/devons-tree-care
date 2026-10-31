@@ -96,8 +96,6 @@
     font-size:30px;font-weight:800;line-height:60px;margin:0 auto 15px}
   .headline{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--bark)}
   .note{color:var(--muted);font-size:13.5px;margin-top:10px;line-height:1.55}
-  .msgbox{background:var(--wash);border-radius:12px;padding:14px;font-size:12.5px;
-    color:var(--muted);margin-top:14px;text-align:left;line-height:1.5}
   .err{text-align:center;color:var(--muted);padding:48px 0;line-height:1.65}
   .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:26px;
     letter-spacing:.06em;text-transform:uppercase;font-weight:700}
@@ -205,24 +203,11 @@ function render(){
 
   go.onclick=function(){
     if(!chk.checked)return;
-    var msg="CONFIRMED ✓ — "+d.n+", "+d.s+" on "+when+
-      (time?", "+time:"")+" for "+fmtMoney(d.p)+". I accept the terms.";
-    var sms="sms:"+digits(d.ph)+"?&body="+encodeURIComponent(msg);
     document.getElementById("cta").innerHTML=
       '<div class="done"><div class="ck">&#10003;</div>'+
       '<div class="headline">Confirmed — thank you!</div>'+
-      '<div class="note">Your messages app is opening. Press send — that text is your receipt.</div>'+
-      '<div class="msgbox">'+esc(msg)+'</div>'+
-      (d.ph?'<div class="note">Didn\'t open? Text it to <b>'+esc(phone)+'</b>:</div>'+
-        '<a class="cta" href="'+esc(sms)+'" style="display:block;text-align:center;text-decoration:none">Text '+esc(phone)+'</a>':'')+
-      '<button class="cta ghost" id="cp">Copy message</button></div>';
-    var cp=document.getElementById("cp");
-    cp.onclick=function(){
-      var ok=function(){cp.textContent="Copied ✓";};
-      if(navigator.clipboard&&navigator.clipboard.writeText)
-        navigator.clipboard.writeText(msg).then(ok,function(){prompt("Copy this message:",msg);});
-      else prompt("Copy this message:",msg);
-    };
+      '<div class="note">You’re booked in for '+esc(when)+(time?', '+esc(time):'')+'.'+
+        (d.ph?' Anything changes, give us a call on '+esc(phone)+'.':'')+'</div></div>';
     // Tell the CRM directly so the booking ticks itself; the app polls this every minute.
     if(d.r&&d.j&&d.j.length){
       try{
@@ -230,8 +215,8 @@ function render(){
           body:JSON.stringify({jobIds:d.j,cid:d.c,name:d.n})}).catch(function(){});
       }catch(e){}
     }
-    // Written proof emailed to the business the moment they agree. Fire-and-forget -- the
-    // SMS receipt above is the fallback if this fails or was never activated.
+    // Written proof emailed to the business the moment they agree. Fire-and-forget: the
+    // client is finished either way, so a failure here never blocks their confirmation.
     if(d.e){
       try{
         fetch("https://formsubmit.co/ajax/"+encodeURIComponent(d.e),{method:"POST",
@@ -249,7 +234,6 @@ function render(){
           })}).catch(function(){});
       }catch(e){}
     }
-    if(d.ph)location.href=sms;
   };
 }
 render();
