@@ -255,7 +255,7 @@ ok("the og:image actually exists", fs.existsSync(path.join(ROOT, "icon-512.png")
   ok("confirm.html asks the client for no text message", !doc.includes("sms:"));
   ok("confirm.html does not redirect anywhere on confirm", !doc.includes("location.href=sms"));
   ok("confirm.html still tells the CRM over the relay", doc.includes('post(d.r+"/confirm"'));
-  ok("confirm.html still emails the business", doc.includes("formsubmit.co/ajax/"));
+  ok("the relay is the only thing confirm.html talks to", !doc.includes("formsubmit"));
 }
 // Build a real message and check the url is the last thing in it.
 A.__setDb(A.normalize({

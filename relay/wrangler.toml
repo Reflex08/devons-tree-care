@@ -12,3 +12,10 @@ id = "a5b23b8e53f34c03a15cc84bc539d332"
 # Read-only key for the CRM's minute poll. Public by necessity (it ships inside the
 # page), and it guards nothing but a 30-day list of "job N was confirmed".
 READ_KEY = "dv-7c41e0b93a6d5f28"
+
+# Where the confirmation email goes, and the name it is signed with. Pinned here on
+# purpose: /confirm is public, so a recipient taken from the request body would make
+# this an open mail relay. SENDER_EMAIL (the address verified with the mail provider)
+# and BREVO_KEY are secrets -- set with `wrangler secret put`, never in this file.
+NOTIFY_TO = ""
+BIZ_NAME = "Devon's Tree Care"
