@@ -95,7 +95,6 @@
   .ck{width:60px;height:60px;border-radius:50%;background:var(--leaf-soft);color:var(--leaf);
     font-size:30px;font-weight:800;line-height:60px;margin:0 auto 15px}
   .headline{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--bark)}
-  .note{color:var(--muted);font-size:13.5px;margin-top:10px;line-height:1.55}
   .err{text-align:center;color:var(--muted);padding:48px 0;line-height:1.65}
   .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:26px;
     letter-spacing:.06em;text-transform:uppercase;font-weight:700}
@@ -205,9 +204,7 @@ function render(){
     if(!chk.checked)return;
     document.getElementById("cta").innerHTML=
       '<div class="done"><div class="ck">&#10003;</div>'+
-      '<div class="headline">Confirmed — thank you!</div>'+
-      '<div class="note">You’re booked in for '+esc(when)+(time?', '+esc(time):'')+'.'+
-        (d.ph?' Anything changes, give us a call on '+esc(phone)+'.':'')+'</div></div>';
+      '<div class="headline">Confirmed — thank you!</div></div>';
     // Tell the CRM directly so the booking ticks itself; the app polls this every minute.
     if(d.r&&d.j&&d.j.length){
       try{
