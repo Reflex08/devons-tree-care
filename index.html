@@ -1776,7 +1776,7 @@ $("#job-overlay").addEventListener("click",e=>{if(backdropTap(e,$("#job-overlay"
    RELAY is a tiny Cloudflare worker (see relay/ in this repo). It exists only so a client
    tapping Confirm on their own phone can reach this app, which has no backend of its own.
    Leave RELAY empty and everything still works — the tick just has to be done by hand. */
-const RELAY="https://devon-confirm-relay.REPLACE.workers.dev";
+const RELAY="https://devon-confirm-relay.confirm-relay.workers.dev";
 const RELAY_KEY="dv-7c41e0b93a6d5f28";
 const CONF_SEEN="devon.confseen";
 /* Poll for "the client agreed" and tick the job. Runs on load and every minute after.
@@ -1810,7 +1810,7 @@ async function pullConfirms(){
    no server and no database. Keep the payload keys short — a long URL gets mangled by some
    SMS apps. `ph` is optional: with no separate business line the link goes out from the
    owner's own phone, so the client already has that thread to reply in. */
-const CONFIRM_VER="5";   // bump on every confirm.html change
+const CONFIRM_VER="6";   // bump on every confirm.html change
 /* The client opens this on their own phone, so confirm.html needs a public URL. Empty
    it and the Confirm button says so rather than texting a link that cannot open. */
 const CONFIRM_BASE="https://reflex08.github.io/devons-tree-care/confirm.html";
