@@ -96,6 +96,7 @@ try {
   vm.runInContext(shim, sandbox, { timeout: 15000 });
 } catch (e) {
   console.error("FATAL: the app script threw on load —", e.message);
+
   process.exit(1);
 }
 const A = sandbox;
@@ -253,7 +254,7 @@ ok("the og:image actually exists", fs.existsSync(path.join(ROOT, "icon-512.png")
   const doc = prevDocs.find(d => d[0] === "confirm.html")[1];
   ok("confirm.html asks the client for no text message", !doc.includes("sms:"));
   ok("confirm.html does not redirect anywhere on confirm", !doc.includes("location.href=sms"));
-  ok("confirm.html still tells the CRM over the relay", doc.includes('fetch(d.r+"/confirm"'));
+  ok("confirm.html still tells the CRM over the relay", doc.includes('post(d.r+"/confirm"'));
   ok("confirm.html still emails the business", doc.includes("formsubmit.co/ajax/"));
 }
 // Build a real message and check the url is the last thing in it.
@@ -490,6 +491,14 @@ ok("no real phone numbers are baked into the app",
    !/\+1(?!555)\d{10}/.test(script));
 
 /* ---------- report ---------- */
+/* confirm.html is a separate page with its own click handler, so it gets driven for real
+   in a stubbed DOM rather than grepped. Child process keeps its globals out of here. */
+{
+  const r = require("child_process").spawnSync(process.execPath,
+    [require("path").join(__dirname, "confirm-page.js")], { encoding: "utf8" });
+  ok("confirm.html delivery behaviour", r.status === 0, (r.stdout || "") + (r.stderr || ""));
+}
+
 const total = pass + fails.length;
 if (fails.length) {
   console.log("\n" + fails.length + " of " + total + " checks FAILED:\n");
